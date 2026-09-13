@@ -29,7 +29,7 @@ import { issueCard, initialCreditLine } from "./services/pomelo";
 import { defaultCoverageForPlan } from "./services/parametric";
 import { INSCRIPTION_FEE_CLP } from "./services/cupos";
 import { createPayment, getPaymentStatus, isFlowConfigured } from "./services/flow";
-import { sortearGanadores, CUPOS_VIAJE_CHINA } from "./services/sorteo";
+import { sortearGanadores, CUPOS_VIAJE_BRASIL } from "./services/sorteo";
 import type { FounderReviewInput } from "@shared/schema";
 
 export const storage = {
@@ -550,7 +550,7 @@ export const storage = {
     return inscripcion;
   },
 
-  // --- Administración de la convocatoria: socios fundadores y sorteo China ---
+  // --- Administración de la convocatoria: socios fundadores y sorteo Brasil ---
 
   async listInscripcionesAdmin() {
     return db.select().from(convocatoriaInscripciones).orderBy(desc(convocatoriaInscripciones.createdAt));
@@ -578,13 +578,13 @@ export const storage = {
     return updated;
   },
 
-  async runChinaTripRaffle() {
+  async runBrasilTripRaffle() {
     const yaSeleccionados = await db
       .select()
       .from(convocatoriaInscripciones)
-      .where(eq(convocatoriaInscripciones.chinaTripSelected, true));
+      .where(eq(convocatoriaInscripciones.brasilTripSelected, true));
 
-    const cuposRestantes = CUPOS_VIAJE_CHINA - yaSeleccionados.length;
+    const cuposRestantes = CUPOS_VIAJE_BRASIL - yaSeleccionados.length;
     if (cuposRestantes <= 0) {
       return { seleccionados: [], mensaje: "Ya se completaron los 50 cupos del sorteo." };
     }
@@ -595,7 +595,7 @@ export const storage = {
       .where(
         and(
           eq(convocatoriaInscripciones.paymentStatus, "pagado"),
-          eq(convocatoriaInscripciones.chinaTripSelected, false)
+          eq(convocatoriaInscripciones.brasilTripSelected, false)
         )
       );
 
@@ -604,7 +604,7 @@ export const storage = {
     for (const g of ganadores) {
       const [updated] = await db
         .update(convocatoriaInscripciones)
-        .set({ chinaTripSelected: true, chinaTripSelectedAt: new Date() })
+        .set({ brasilTripSelected: true, brasilTripSelectedAt: new Date() })
         .where(eq(convocatoriaInscripciones.id, g.id))
         .returning();
       ganadoresActualizados.push(updated);

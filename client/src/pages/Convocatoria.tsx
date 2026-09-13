@@ -124,7 +124,7 @@ export default function Convocatoria() {
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
             Impulsamos proveedores con formación, acompañamiento y herramientas para crecer en la región.
             Las 200 empresas de esta convocatoria serán <strong>socias fundadoras</strong> de SICREP, y 50 de
-            ellas serán impulsadas a un viaje de negocios a China.
+            ellas serán impulsadas a un viaje de negocios a Brasil.
           </p>
           <a href="#inscripcion">
             <Button size="lg" className="mt-8">
@@ -167,7 +167,7 @@ export default function Convocatoria() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold sm:text-3xl">Socios fundadores y viaje de negocios a China</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">Socios fundadores y viaje de negocios a Brasil</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -190,13 +190,13 @@ export default function Convocatoria() {
               <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-violet/10">
                 <Plane className="h-6 w-6 text-violet" />
               </div>
-              <CardTitle className="text-base">Viaje de negocios a China</CardTitle>
+              <CardTitle className="text-base">Viaje de negocios a Brasil</CardTitle>
               <CardDescription>50 cupos, por sorteo</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Entre las empresas inscritas con pago confirmado se sortearán <strong>50 cupos</strong> para un
-                viaje de negocios a China. El sorteo es al azar, sin criterios adicionales, y se realiza una vez
+                viaje de negocios a Brasil. El sorteo es al azar, sin criterios adicionales, y se realiza una vez
                 cerrada la convocatoria.
               </p>
             </CardContent>
@@ -249,7 +249,7 @@ export default function Convocatoria() {
               <p>
                 Inscribirte y pagar no confirma automáticamente tu estatus de socio fundador (requiere
                 verificación tributaria/laboral posterior) ni te garantiza un cupo en el sorteo del viaje a
-                China (50 cupos entre todas las inscritas con pago confirmado).
+                Brasil (50 cupos entre todas las inscritas con pago confirmado).
               </p>
             </div>
             {!flowHabilitado && (

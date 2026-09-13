@@ -280,9 +280,9 @@ export const convocatoriaInscripciones = pgTable("convocatoria_inscripciones", {
   founderReviewNote: text("founder_review_note").notNull().default(""),
   founderReviewedAt: timestamp("founder_reviewed_at"),
 
-  // Sorteo del impulso a viaje de negocios a China (50 cupos entre los inscritos pagados).
-  chinaTripSelected: boolean("china_trip_selected").notNull().default(false),
-  chinaTripSelectedAt: timestamp("china_trip_selected_at"),
+  // Sorteo del impulso a viaje de negocios a Brasil (50 cupos entre los inscritos pagados).
+  brasilTripSelected: boolean("brasil_trip_selected").notNull().default(false),
+  brasilTripSelectedAt: timestamp("brasil_trip_selected_at"),
 });
 
 // --- Academia Proveedor Regional ---

@@ -285,8 +285,8 @@ export function registerRoutes(app: Express) {
     }
   );
 
-  app.post("/api/admin/convocatoria/sorteo-china", requireAuth, requireRole("admin"), async (_req, res) => {
-    const result = await storage.runChinaTripRaffle();
+  app.post("/api/admin/convocatoria/sorteo-brasil", requireAuth, requireRole("admin"), async (_req, res) => {
+    const result = await storage.runBrasilTripRaffle();
     res.json(result);
   });
 }

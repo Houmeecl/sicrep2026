@@ -9,7 +9,7 @@ interface InscripcionStatus {
   companyName: string;
   paymentStatus: string;
   founderStatus: string;
-  chinaTripSelected: boolean;
+  brasilTripSelected: boolean;
 }
 
 const STATUS_INFO: Record<string, { label: string; icon: typeof CheckCircle2; variant: "success" | "default" | "accent" }> = {
@@ -72,8 +72,8 @@ export default function ConvocatoriaRetorno() {
                   <div className="flex items-center gap-2">
                     <Plane className="h-4 w-4 text-violet" />
                     <span>
-                      Viaje a China:{" "}
-                      <strong>{data.chinaTripSelected ? "¡Seleccionada en el sorteo!" : "Pendiente del sorteo"}</strong>
+                      Viaje a Brasil:{" "}
+                      <strong>{data.brasilTripSelected ? "¡Seleccionada en el sorteo!" : "Pendiente del sorteo"}</strong>
                     </span>
                   </div>
                 </div>
