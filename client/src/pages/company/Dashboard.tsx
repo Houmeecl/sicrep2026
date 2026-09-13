@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { SicrepMark } from "@/components/SicrepMark";
+import logoSicrep from "@/assets/logo-sicrep.png";
 import { Users, TrendingUp, Leaf, Info } from "lucide-react";
 
 interface ImpactPanel {
@@ -250,8 +250,7 @@ export default function CompanyDashboard() {
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 font-extrabold">
-            <SicrepMark className="h-7 w-7" />
-            <span><span className="text-primary">sic</span><span className="text-accent">rep</span></span>
+            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-11 w-11 rounded-lg" />
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.fullName}</span>

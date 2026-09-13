@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
-import { SicrepMark } from "@/components/SicrepMark";
+import logoSicrep from "@/assets/logo-sicrep.png";
 import {
   BarChart3,
   Users,
@@ -148,20 +148,7 @@ function PreinscripcionForm() {
 }
 
 function Logo({ light = false }: { light?: boolean }) {
-  return (
-    <div className="flex items-center gap-2">
-      <SicrepMark className="h-8 w-8" />
-      <div className="leading-none">
-        <div className={`text-xl font-extrabold ${light ? "text-white" : ""}`}>
-          <span className={light ? "text-white" : "text-primary"}>sic</span>
-          <span className="bg-sicrep-gradient bg-clip-text text-transparent">rep</span>
-        </div>
-        <div className={`text-[9px] font-semibold uppercase tracking-wide ${light ? "text-white/70" : "text-muted-foreground"}`}>
-          Centro Desarrollo<br />Proveedor Regional
-        </div>
-      </div>
-    </div>
-  );
+  return <img src={logoSicrep} alt="SICREP — Proveedor Regional" className={`h-14 w-14 rounded-lg ${light ? "shadow-md" : ""}`} />;
 }
 
 export default function Landing() {
