@@ -148,7 +148,7 @@ function PreinscripcionForm() {
 }
 
 function Logo({ light = false }: { light?: boolean }) {
-  return <img src={logoSicrep} alt="SICREP — Proveedor Regional" className={`h-14 w-14 rounded-lg ${light ? "shadow-md" : ""}`} />;
+  return <img src={logoSicrep} alt="SICREP — Proveedor Regional" className={`h-16 w-16 rounded-lg ${light ? "shadow-md" : ""}`} />;
 }
 
 export default function Landing() {

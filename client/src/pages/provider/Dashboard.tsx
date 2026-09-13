@@ -131,7 +131,7 @@ export default function ProviderDashboard() {
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 font-extrabold">
-            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-11 w-11 rounded-lg" />
+            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-16 w-16 rounded-lg" />
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.fullName}</span>

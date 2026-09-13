@@ -104,7 +104,7 @@ export default function Convocatoria() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-extrabold">
-            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-11 w-11 rounded-lg" />
+            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-16 w-16 rounded-lg" />
           </Link>
           <a href="#inscripcion">
             <Button size="sm">
