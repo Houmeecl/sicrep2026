@@ -86,3 +86,18 @@ Este proyecto se generó como repositorio git local. Para subirlo:
 git remote add origin <URL_DEL_REPO>
 git push -u origin main
 ```
+
+## Despliegue en producción (VPS vía GitHub Actions)
+
+El workflow `.github/workflows/deploy.yml` se conecta por SSH al VPS de producción en
+cada push a `main` (o manualmente desde la pestaña Actions → "Desplegar SICREP en VPS" →
+"Run workflow"). Provisiona Node.js/PostgreSQL/pm2 si faltan, actualiza el código,
+construye la app y la deja corriendo con `pm2`.
+
+Requiere estos **GitHub Actions Secrets** (Settings → Secrets and variables → Actions),
+nunca en el código: `VPS_HOST`, `VPS_PORT`, `VPS_USER`, `VPS_PASSWORD`, `DATABASE_URL`,
+`SESSION_SECRET`, `FLOW_API_KEY`, `FLOW_SECRET_KEY`, `FLOW_ENV`, `APP_BASE_URL`.
+
+**Pendiente:** `APP_BASE_URL` apunta hoy a la IP directa por HTTP; Flow.cl normalmente
+exige URLs de retorno/confirmación por HTTPS, así que para cobrar en serio hace falta un
+dominio apuntando al VPS + Nginx + certificado TLS (Let's Encrypt).
