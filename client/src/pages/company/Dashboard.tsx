@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
-import { Users, TrendingUp, Mountain, Leaf, Info } from "lucide-react";
+import { SicrepMark } from "@/components/SicrepMark";
+import { Users, TrendingUp, Leaf, Info } from "lucide-react";
 
 interface ImpactPanel {
   company: { companyName: string };
@@ -249,7 +250,7 @@ export default function CompanyDashboard() {
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 font-extrabold">
-            <Mountain className="h-6 w-6 text-primary" />
+            <SicrepMark className="h-7 w-7" />
             <span><span className="text-primary">sic</span><span className="text-accent">rep</span></span>
           </div>
           <div className="flex items-center gap-4">

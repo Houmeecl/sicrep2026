@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import { formatCLP } from "@/lib/utils";
+import { SicrepMark } from "@/components/SicrepMark";
 import {
   Search,
   Route,
@@ -15,7 +16,6 @@ import {
   ShieldCheck,
   CreditCard,
   Share2,
-  Mountain,
   ArrowRight,
   Info,
   CheckCircle2,
@@ -100,7 +100,7 @@ export default function Convocatoria() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-extrabold">
-            <Mountain className="h-6 w-6 text-primary" />
+            <SicrepMark className="h-7 w-7" />
             <span><span className="text-primary">sic</span><span className="text-accent">rep</span></span>
           </Link>
           <a href="#inscripcion">

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { SicrepMark } from "@/components/SicrepMark";
 import {
   BarChart3,
   Users,
@@ -13,7 +14,6 @@ import {
   Route,
   Handshake,
   TrendingUp,
-  Mountain,
   MapPin,
   Linkedin,
   Youtube,
@@ -150,7 +150,7 @@ function PreinscripcionForm() {
 function Logo({ light = false }: { light?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <Mountain className="h-7 w-7 text-violet" strokeWidth={2.5} />
+      <SicrepMark className="h-8 w-8" />
       <div className="leading-none">
         <div className={`text-xl font-extrabold ${light ? "text-white" : ""}`}>
           <span className={light ? "text-white" : "text-primary"}>sic</span>
