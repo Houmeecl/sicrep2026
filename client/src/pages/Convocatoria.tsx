@@ -116,26 +116,109 @@ export default function Convocatoria() {
 
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-sicrep-gradient-soft" />
-        <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:px-6">
-          <p className="text-xs font-bold uppercase tracking-widest text-violet">Convocatoria regional 2026</p>
-          <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
-            <span className="bg-sicrep-gradient bg-clip-text text-transparent">¿Quieres ser parte?</span>
-          </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Impulsamos proveedores con formación, acompañamiento y herramientas para crecer en la región.
-            Las 200 empresas de esta convocatoria serán <strong>socias fundadoras</strong> de SICREP, y 50 de
-            ellas serán impulsadas a un viaje de negocios a Brasil.
-          </p>
-          <a href="#inscripcion">
-            <Button size="lg" className="mt-8">
-              Inscribirme ahora <ArrowRight className="h-4 w-4" />
-            </Button>
-          </a>
-          {comunas.length > 0 && (
-            <p className="mt-4 text-sm font-semibold text-accent">
-              Quedan {totalDisponibles} de {totalCupos} cupos en total — se asignan por orden de inscripción.
+        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-start">
+          <div className="lg:pt-8">
+            <p className="text-xs font-bold uppercase tracking-widest text-violet">Convocatoria regional 2026</p>
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
+              <span className="bg-sicrep-gradient bg-clip-text text-transparent">¿Quieres ser parte?</span>
+            </h1>
+            <p className="mt-4 max-w-xl text-lg text-muted-foreground">
+              Impulsamos proveedores con formación, acompañamiento y herramientas para crecer en la región.
+              Las 200 empresas de esta convocatoria serán <strong>socias fundadoras</strong> de SICREP, y 50 de
+              ellas serán impulsadas a un viaje de negocios a Brasil.
             </p>
-          )}
+            <a href="#inscripcion">
+              <Button size="lg" className="mt-8">
+                Inscribirme ahora <ArrowRight className="h-4 w-4" />
+              </Button>
+            </a>
+            {comunas.length > 0 && (
+              <p className="mt-4 text-sm font-semibold text-accent">
+                Quedan {totalDisponibles} de {totalCupos} cupos en total — se asignan por orden de inscripción.
+              </p>
+            )}
+          </div>
+
+          <div id="inscripcion">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-2xl">Inscríbete a la convocatoria</CardTitle>
+                <CardDescription>
+                  Costo de inscripción: {formatCLP(9990)} (pago único).
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    Inscribirte y pagar no confirma automáticamente tu estatus de socio fundador (requiere
+                    verificación tributaria/laboral posterior) ni te garantiza un cupo en el sorteo del viaje a
+                    Brasil (50 cupos entre todas las inscritas con pago confirmado).
+                  </p>
+                </div>
+                {!flowHabilitado && (
+                  <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm text-muted-foreground">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                    <p>
+                      El pago en línea todavía no está habilitado (falta configurar el proveedor de pago). Puedes
+                      inscribirte y tu cupo queda reservado como <strong>pago pendiente de habilitar</strong> — no
+                      se te cobrará nada hasta que el pago esté activo.
+                    </p>
+                  </div>
+                )}
+
+                {result ? (
+                  <div className="flex flex-col items-center gap-3 py-8 text-center">
+                    <CheckCircle2 className="h-12 w-12 text-success" />
+                    <h3 className="text-xl font-bold">¡Inscripción registrada!</h3>
+                    <p className="max-w-sm text-muted-foreground">
+                      {result.status === "pago_no_habilitado"
+                        ? "Tu cupo quedó reservado. Te contactaremos para habilitar el pago."
+                        : "Revisa tu correo para completar el proceso."}
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="comunaId">Comuna</Label>
+                      <Select id="comunaId" name="comunaId" required defaultValue="">
+                        <option value="" disabled>Selecciona tu comuna</option>
+                        {comunas.map((c) => (
+                          <option key={c.id} value={c.id} disabled={c.disponibles === 0}>
+                            {c.nombre} {c.disponibles === 0 ? "(sin cupos)" : `(${c.disponibles} cupos)`}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <Label htmlFor="companyName">Nombre de la empresa</Label>
+                      <Input id="companyName" name="companyName" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="rut">RUT de la empresa</Label>
+                      <Input id="rut" name="rut" required placeholder="76.123.456-7" />
+                    </div>
+                    <div>
+                      <Label htmlFor="contactName">Persona de contacto</Label>
+                      <Input id="contactName" name="contactName" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="contactEmail">Correo electrónico</Label>
+                      <Input id="contactEmail" name="contactEmail" type="email" required />
+                    </div>
+                    <div>
+                      <Label htmlFor="contactPhone">Teléfono</Label>
+                      <Input id="contactPhone" name="contactPhone" required placeholder="+56 9 1234 5678" />
+                    </div>
+                    {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
+                    <Button type="submit" size="lg" className="sm:col-span-2" disabled={loading}>
+                      {loading ? "Procesando..." : flowHabilitado ? "Continuar al pago" : "Reservar mi cupo"}
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
@@ -235,86 +318,6 @@ export default function Convocatoria() {
         </div>
       </section>
 
-      <section id="inscripcion" className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Inscríbete a la convocatoria</CardTitle>
-            <CardDescription>
-              Costo de inscripción: {formatCLP(9990)} (pago único).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>
-                Inscribirte y pagar no confirma automáticamente tu estatus de socio fundador (requiere
-                verificación tributaria/laboral posterior) ni te garantiza un cupo en el sorteo del viaje a
-                Brasil (50 cupos entre todas las inscritas con pago confirmado).
-              </p>
-            </div>
-            {!flowHabilitado && (
-              <div className="mb-4 flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/5 p-4 text-sm text-muted-foreground">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-                <p>
-                  El pago en línea todavía no está habilitado (falta configurar el proveedor de pago). Puedes
-                  inscribirte y tu cupo queda reservado como <strong>pago pendiente de habilitar</strong> — no se
-                  te cobrará nada hasta que el pago esté activo.
-                </p>
-              </div>
-            )}
-
-            {result ? (
-              <div className="flex flex-col items-center gap-3 py-8 text-center">
-                <CheckCircle2 className="h-12 w-12 text-success" />
-                <h3 className="text-xl font-bold">¡Inscripción registrada!</h3>
-                <p className="max-w-sm text-muted-foreground">
-                  {result.status === "pago_no_habilitado"
-                    ? "Tu cupo quedó reservado. Te contactaremos para habilitar el pago."
-                    : "Revisa tu correo para completar el proceso."}
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <Label htmlFor="comunaId">Comuna</Label>
-                  <Select id="comunaId" name="comunaId" required defaultValue="">
-                    <option value="" disabled>Selecciona tu comuna</option>
-                    {comunas.map((c) => (
-                      <option key={c.id} value={c.id} disabled={c.disponibles === 0}>
-                        {c.nombre} {c.disponibles === 0 ? "(sin cupos)" : `(${c.disponibles} cupos)`}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="sm:col-span-2">
-                  <Label htmlFor="companyName">Nombre de la empresa</Label>
-                  <Input id="companyName" name="companyName" required />
-                </div>
-                <div>
-                  <Label htmlFor="rut">RUT de la empresa</Label>
-                  <Input id="rut" name="rut" required placeholder="76.123.456-7" />
-                </div>
-                <div>
-                  <Label htmlFor="contactName">Persona de contacto</Label>
-                  <Input id="contactName" name="contactName" required />
-                </div>
-                <div>
-                  <Label htmlFor="contactEmail">Correo electrónico</Label>
-                  <Input id="contactEmail" name="contactEmail" type="email" required />
-                </div>
-                <div>
-                  <Label htmlFor="contactPhone">Teléfono</Label>
-                  <Input id="contactPhone" name="contactPhone" required placeholder="+56 9 1234 5678" />
-                </div>
-                {error && <p className="sm:col-span-2 text-sm text-destructive">{error}</p>}
-                <Button type="submit" size="lg" className="sm:col-span-2" disabled={loading}>
-                  {loading ? "Procesando..." : flowHabilitado ? "Continuar al pago" : "Reservar mi cupo"}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
-      </section>
     </div>
   );
 }
