@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
@@ -61,6 +62,9 @@ export default function Convocatoria() {
   useEffect(() => {
     reload();
   }, []);
+
+  const totalCupos = comunas.reduce((sum, c) => sum + c.cupos, 0);
+  const totalDisponibles = comunas.reduce((sum, c) => sum + c.disponibles, 0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -128,6 +132,11 @@ export default function Convocatoria() {
               Inscribirme ahora <ArrowRight className="h-4 w-4" />
             </Button>
           </a>
+          {comunas.length > 0 && (
+            <p className="mt-4 text-sm font-semibold text-accent">
+              Quedan {totalDisponibles} de {totalCupos} cupos en total — se asignan por orden de inscripción.
+            </p>
+          )}
         </div>
       </section>
 
@@ -204,17 +213,25 @@ export default function Convocatoria() {
             población.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {comunas.map((c) => (
-              <Card key={c.id}>
-                <CardHeader>
-                  <CardTitle className="text-base">{c.nombre}</CardTitle>
-                  <CardDescription>{c.disponibles} de {c.cupos} cupos disponibles</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Progress value={(c.ocupados / c.cupos) * 100} />
-                </CardContent>
-              </Card>
-            ))}
+            {comunas.map((c) => {
+              const agotado = c.disponibles === 0;
+              const ultimosCupos = !agotado && c.disponibles / c.cupos <= 0.15;
+              return (
+                <Card key={c.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base">{c.nombre}</CardTitle>
+                      {agotado && <Badge>Agotado</Badge>}
+                      {ultimosCupos && <Badge variant="accent">¡Últimos cupos!</Badge>}
+                    </div>
+                    <CardDescription>{c.disponibles} de {c.cupos} cupos disponibles</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Progress value={(c.ocupados / c.cupos) * 100} />
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
