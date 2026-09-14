@@ -18,16 +18,19 @@ import {
   executives,
   convocatoriaComunas,
   convocatoriaInscripciones,
+  membershipRegistrations,
   type InsertUser,
   type InsertApplication,
   type InsertGreenFinancingProject,
   type InsertImpactRecord,
   type InsertConvocatoriaInscripcion,
+  type InsertMembershipRegistration,
 } from "@shared/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { issueCard, initialCreditLine } from "./services/pomelo";
 import { defaultCoverageForPlan } from "./services/parametric";
 import { INSCRIPTION_FEE_CLP } from "./services/cupos";
+import { MEMBERSHIP_FEE_CLP } from "./services/membresia";
 import { createPayment, getPaymentStatus, isFlowConfigured } from "./services/flow";
 import { sortearGanadores, CUPOS_VIAJE_BRASIL } from "./services/sorteo";
 import type { FounderReviewInput } from "@shared/schema";
@@ -548,6 +551,96 @@ export const storage = {
       .from(convocatoriaInscripciones)
       .where(eq(convocatoriaInscripciones.flowToken, token));
     return inscripcion;
+  },
+
+  // --- Membresía Proveedor Regional ---
+
+  async createMembershipRegistration(
+    input: InsertMembershipRegistration,
+    urls: { urlConfirmation: string; urlReturn: string }
+  ) {
+    const commerceOrder = `pr-mem-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+
+    const [registro] = await db
+      .insert(membershipRegistrations)
+      .values({
+        companyName: input.companyName,
+        rut: input.rut,
+        contactName: input.contactName,
+        contactEmail: input.contactEmail,
+        contactPhone: input.contactPhone,
+        amount: String(MEMBERSHIP_FEE_CLP),
+        paymentStatus: "pendiente",
+        flowCommerceOrder: commerceOrder,
+      })
+      .returning();
+
+    if (!isFlowConfigured()) {
+      const [updated] = await db
+        .update(membershipRegistrations)
+        .set({ paymentStatus: "pago_no_habilitado" })
+        .where(eq(membershipRegistrations.id, registro.id))
+        .returning();
+      return { registro: updated, redirectUrl: null as string | null };
+    }
+
+    const payment = await createPayment({
+      commerceOrder,
+      subject: "Membresía Proveedor Regional",
+      amount: MEMBERSHIP_FEE_CLP,
+      email: input.contactEmail,
+      urlConfirmation: urls.urlConfirmation,
+      urlReturn: urls.urlReturn,
+    });
+
+    const [updated] = await db
+      .update(membershipRegistrations)
+      .set({
+        paymentStatus: "en_proceso",
+        flowToken: payment.token,
+        flowFlowOrder: payment.flowOrder,
+      })
+      .where(eq(membershipRegistrations.id, registro.id))
+      .returning();
+
+    return { registro: updated, redirectUrl: payment.redirectUrl };
+  },
+
+  async confirmMembershipFlowPaymentByToken(token: string) {
+    const [registro] = await db
+      .select()
+      .from(membershipRegistrations)
+      .where(eq(membershipRegistrations.flowToken, token));
+    if (!registro) throw Object.assign(new Error("Registro no encontrado para este token"), { status: 404 });
+
+    const status = await getPaymentStatus(token);
+    const map: Record<number, "en_proceso" | "pagado" | "rechazado" | "anulado"> = {
+      1: "en_proceso",
+      2: "pagado",
+      3: "rechazado",
+      4: "anulado",
+    };
+    const paymentStatus = map[status.status] ?? "en_proceso";
+
+    const [updated] = await db
+      .update(membershipRegistrations)
+      .set({
+        paymentStatus,
+        flowRawStatus: JSON.stringify(status.raw),
+        paidAt: paymentStatus === "pagado" ? new Date() : registro.paidAt,
+      })
+      .where(eq(membershipRegistrations.id, registro.id))
+      .returning();
+
+    return updated;
+  },
+
+  async getMembershipRegistrationByToken(token: string) {
+    const [registro] = await db
+      .select()
+      .from(membershipRegistrations)
+      .where(eq(membershipRegistrations.flowToken, token));
+    return registro;
   },
 
   // --- Administración de la convocatoria: socios fundadores y sorteo Brasil ---

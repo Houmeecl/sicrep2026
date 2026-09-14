@@ -285,6 +285,28 @@ export const convocatoriaInscripciones = pgTable("convocatoria_inscripciones", {
   brasilTripSelectedAt: timestamp("brasil_trip_selected_at"),
 });
 
+// --- Membresía Proveedor Regional (landing /membresia) ---
+// Cobro único hoy (vía Flow, igual que la convocatoria). La renovación automática /
+// recurrente NO está implementada — cada ciclo de cobro futuro requeriría una nueva
+// transacción manual o una integración de suscripciones aparte.
+
+export const membershipRegistrations = pgTable("membership_registrations", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  rut: varchar("rut", { length: 32 }).notNull(),
+  contactName: varchar("contact_name", { length: 255 }).notNull(),
+  contactEmail: varchar("contact_email", { length: 255 }).notNull(),
+  contactPhone: varchar("contact_phone", { length: 64 }).notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentStatus: paymentStatusEnum("payment_status").notNull().default("pendiente"),
+  flowCommerceOrder: varchar("flow_commerce_order", { length: 64 }),
+  flowToken: varchar("flow_token", { length: 128 }),
+  flowFlowOrder: varchar("flow_flow_order", { length: 64 }),
+  flowRawStatus: text("flow_raw_status"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  paidAt: timestamp("paid_at"),
+});
+
 // --- Academia Proveedor Regional ---
 
 export const courses = pgTable("courses", {
@@ -445,6 +467,14 @@ export const founderReviewSchema = z.object({
   note: z.string().optional(),
 });
 
+export const insertMembershipRegistrationSchema = z.object({
+  companyName: z.string().min(2),
+  rut: z.string().min(3),
+  contactName: z.string().min(2),
+  contactEmail: z.string().email(),
+  contactPhone: z.string().min(5),
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -490,3 +520,5 @@ export type ConvocatoriaComuna = typeof convocatoriaComunas.$inferSelect;
 export type ConvocatoriaInscripcion = typeof convocatoriaInscripciones.$inferSelect;
 export type InsertConvocatoriaInscripcion = z.infer<typeof insertConvocatoriaInscripcionSchema>;
 export type FounderReviewInput = z.infer<typeof founderReviewSchema>;
+export type MembershipRegistration = typeof membershipRegistrations.$inferSelect;
+export type InsertMembershipRegistration = z.infer<typeof insertMembershipRegistrationSchema>;

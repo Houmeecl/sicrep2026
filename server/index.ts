@@ -11,6 +11,16 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// CORS acotado a los endpoints públicos de membresía, consumidos desde la landing
+// Next.js separada (membresia-next). El resto de la API sigue same-origin only.
+app.use("/api/membresia", (req, res, next) => {
+  res.header("Access-Control-Allow-Origin", process.env.MEMBERSHIP_LANDING_ORIGIN ?? "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 const PgSession = connectPgSimple(session);
 
 app.use(

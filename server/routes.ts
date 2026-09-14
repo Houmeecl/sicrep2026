@@ -13,6 +13,7 @@ import {
   pointsAdjustmentSchema,
   insertConvocatoriaInscripcionSchema,
   founderReviewSchema,
+  insertMembershipRegistrationSchema,
 } from "@shared/schema";
 import { suggestDemoPoints, DEMO_POINTS_RULE_LABEL } from "./services/points";
 import { isFlowConfigured } from "./services/flow";
@@ -262,6 +263,39 @@ export function registerRoutes(app: Express) {
     const inscripcion = await storage.getInscripcionByToken(req.params.token);
     if (!inscripcion) return res.status(404).json({ message: "No encontrada" });
     res.json(inscripcion);
+  });
+
+  // --- Membresía Proveedor Regional (pública): registro con pago ---
+  app.post("/api/membresia/registros", async (req, res, next) => {
+    const parsed = insertMembershipRegistrationSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ message: "Datos inválidos", errors: parsed.error.flatten() });
+    try {
+      const baseUrl = process.env.APP_BASE_URL ?? `http://localhost:${process.env.PORT ?? 5000}`;
+      const result = await storage.createMembershipRegistration(parsed.data, {
+        urlConfirmation: `${baseUrl}/api/membresia/flow/confirmacion`,
+        urlReturn: `${baseUrl}/membresia/retorno`,
+      });
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  app.post("/api/membresia/flow/confirmacion", async (req, res) => {
+    const token = req.body?.token;
+    if (!token) return res.status(400).send("token requerido");
+    try {
+      await storage.confirmMembershipFlowPaymentByToken(String(token));
+      res.status(200).send("OK");
+    } catch (err) {
+      res.status(500).send("Error al confirmar el pago");
+    }
+  });
+
+  app.get("/api/membresia/registros/by-token/:token", async (req, res) => {
+    const registro = await storage.getMembershipRegistrationByToken(req.params.token);
+    if (!registro) return res.status(404).json({ message: "No encontrado" });
+    res.json(registro);
   });
 
   // --- Administración de la convocatoria (solo rol admin) ---
