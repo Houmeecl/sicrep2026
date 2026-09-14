@@ -1,5 +1,5 @@
 /**
- * Puntos: incentivos internos del programa SICREP, no créditos de carbono ni dinero.
+ * Puntos: incentivos internos del programa Proveedor Regional, no créditos de carbono ni dinero.
  *
  * IMPORTANTE: no existe una equivalencia oficial de puntos por tCO2e. El valor de abajo es
  * únicamente una sugerencia ILUSTRATIVA para prellenar el formulario de otorgamiento en esta

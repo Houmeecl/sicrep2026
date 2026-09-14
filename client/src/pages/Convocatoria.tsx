@@ -8,7 +8,7 @@ import { Select } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import { formatCLP } from "@/lib/utils";
-import logoSicrep from "@/assets/logo-sicrep.png";
+import logoProveedorRegional from "@/assets/logo-proveedor-regional.png";
 import {
   Search,
   Route,
@@ -104,7 +104,7 @@ export default function Convocatoria() {
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-extrabold">
-            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-16 w-16 rounded-lg" />
+            <img src={logoProveedorRegional} alt="Proveedor Regional" className="h-16 w-16 rounded-lg" />
           </Link>
           <a href="#inscripcion">
             <Button size="sm">
@@ -115,16 +115,16 @@ export default function Convocatoria() {
       </header>
 
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-sicrep-gradient-soft" />
+        <div className="absolute inset-0 bg-brand-gradient-soft" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-start">
           <div className="lg:pt-8">
             <p className="text-xs font-bold uppercase tracking-widest text-violet">Convocatoria regional 2026</p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
-              <span className="bg-sicrep-gradient bg-clip-text text-transparent">¿Quieres ser parte?</span>
+              <span className="bg-brand-gradient bg-clip-text text-transparent">¿Quieres ser parte?</span>
             </h1>
             <p className="mt-4 max-w-xl text-lg text-muted-foreground">
               Impulsamos proveedores con formación, acompañamiento y herramientas para crecer en la región.
-              Las 200 empresas de esta convocatoria serán <strong>socias fundadoras</strong> de SICREP, y 50 de
+              Las 200 empresas de esta convocatoria serán <strong>socias fundadoras</strong> de Proveedor Regional, y 50 de
               ellas serán impulsadas a un viaje de negocios a Brasil.
             </p>
             <a href="#inscripcion">
@@ -262,7 +262,7 @@ export default function Convocatoria() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                El estatus de socio fundador se confirma después de tu inscripción y pago, sujeto a que SICREP
+                El estatus de socio fundador se confirma después de tu inscripción y pago, sujeto a que Proveedor Regional
                 verifique que tu empresa <strong>no tenga problemas tributarios ni laborales</strong> vigentes.
                 No es automático ni inmediato.
               </p>

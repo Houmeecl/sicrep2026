@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input, Label } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
-import logoSicrep from "@/assets/logo-sicrep.png";
+import logoProveedorRegional from "@/assets/logo-proveedor-regional.png";
 import {
   BarChart3,
   Users,
@@ -89,7 +89,7 @@ function PreinscripcionForm() {
         <CheckCircle2 className="h-12 w-12 text-success" />
         <h3 className="text-xl font-bold">¡Preinscripción recibida!</h3>
         <p className="max-w-sm text-muted-foreground">
-          Un ejecutivo de SICREP se pondrá en contacto contigo para continuar tu diagnóstico.
+          Un ejecutivo de Proveedor Regional se pondrá en contacto contigo para continuar tu diagnóstico.
         </p>
       </div>
     );
@@ -148,7 +148,7 @@ function PreinscripcionForm() {
 }
 
 function Logo({ light = false }: { light?: boolean }) {
-  return <img src={logoSicrep} alt="SICREP — Proveedor Regional" className={`h-16 w-16 rounded-lg ${light ? "shadow-md" : ""}`} />;
+  return <img src={logoProveedorRegional} alt="Proveedor Regional" className={`h-16 w-16 rounded-lg ${light ? "shadow-md" : ""}`} />;
 }
 
 export default function Landing() {
@@ -173,13 +173,13 @@ export default function Landing() {
       </header>
 
       <section id="inicio" className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-sicrep-gradient-soft" />
+        <div className="absolute inset-0 bg-brand-gradient-soft" />
         <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-violet">Centro de Desarrollo de Proveedores Regionales</p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
               Modernizamos tu{" "}
-              <span className="bg-sicrep-gradient bg-clip-text text-transparent">empresa para crecer</span>
+              <span className="bg-brand-gradient bg-clip-text text-transparent">empresa para crecer</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
               Finanzas sostenibles, formación y acompañamiento para fortalecer tu gestión y prepararte para
@@ -198,7 +198,7 @@ export default function Landing() {
           </div>
 
           <div className="relative">
-            <div className="rounded-2xl bg-sicrep-gradient p-8 text-white shadow-xl">
+            <div className="rounded-2xl bg-brand-gradient p-8 text-white shadow-xl">
               <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Progreso de desarrollo</p>
               <div className="mt-4 flex items-center gap-4">
                 <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white/30 text-2xl font-bold">
@@ -246,7 +246,7 @@ export default function Landing() {
           <div className="mt-10 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-flow-col lg:auto-cols-fr">
             {STEPS.map((s, i) => (
               <div key={s.title} className="flex items-start gap-3 lg:flex-col">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sicrep-gradient font-bold text-white">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gradient font-bold text-white">
                   {i + 1}
                 </div>
                 <div>
@@ -264,7 +264,7 @@ export default function Landing() {
       </section>
 
       <section id="empresas" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-2xl font-bold sm:text-3xl">Sé parte de SICREP</h2>
+        <h2 className="text-2xl font-bold sm:text-3xl">Sé parte de Proveedor Regional</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
@@ -302,13 +302,13 @@ export default function Landing() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Formulario de preinscripción</CardTitle>
-              <CardDescription>Completa tus datos y sé parte de SICREP.</CardDescription>
+              <CardDescription>Completa tus datos y sé parte de Proveedor Regional.</CardDescription>
             </CardHeader>
             <CardContent>
               <PreinscripcionForm />
             </CardContent>
           </Card>
-          <div className="flex flex-col justify-end rounded-2xl bg-sicrep-gradient p-8 text-white">
+          <div className="flex flex-col justify-end rounded-2xl bg-brand-gradient p-8 text-white">
             <h3 className="text-2xl font-bold leading-tight">
               Más desarrollo. Más proveedores. Más región.
             </h3>
@@ -320,7 +320,7 @@ export default function Landing() {
         <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            SICREP es un centro de desarrollo para proveedores regionales. No garantiza adjudicaciones ni
+            Proveedor Regional es un centro de desarrollo para proveedores regionales. No garantiza adjudicaciones ni
             reemplaza procesos de compra de terceros. La tarjeta de débito (vía Pomelo) y la protección
             paramétrica son <strong>integraciones en desarrollo, hoy simuladas</strong> — sin movimientos de
             dinero reales. El detalle de tarjeta, protección paramétrica y Academia Proveedor Regional está
@@ -355,7 +355,7 @@ export default function Landing() {
             </p>
           </div>
           <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/20 pt-6 text-xs text-white/60 sm:flex-row">
-            <p>© 2026 SICREP. Todos los derechos reservados.</p>
+            <p>© 2026 Proveedor Regional. Todos los derechos reservados.</p>
             <div className="flex gap-4">
               <a href="#" className="hover:text-white">Términos de uso</a>
               <a href="#" className="hover:text-white">Política de privacidad</a>

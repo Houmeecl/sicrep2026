@@ -16,7 +16,7 @@ const PgSession = connectPgSimple(session);
 app.use(
   session({
     store: new PgSession({ pool, createTableIfMissing: true }),
-    secret: process.env.SESSION_SECRET ?? "sicrep-dev-secret",
+    secret: process.env.SESSION_SECRET ?? "proveedor-regional-dev-secret",
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
@@ -41,7 +41,7 @@ async function start() {
     await setupVite(app, server);
   }
   server.listen(port, "0.0.0.0", () => {
-    console.log(`SICREP escuchando en http://localhost:${port}`);
+    console.log(`Proveedor Regional escuchando en http://localhost:${port}`);
   });
 }
 

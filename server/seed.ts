@@ -24,14 +24,14 @@ import { suggestDemoPoints } from "./services/points";
 import { calcularCuposPorComuna } from "./services/cupos";
 
 async function seed() {
-  console.log("Sembrando datos de ejemplo para SICREP...");
+  console.log("Sembrando datos de ejemplo para Proveedor Regional...");
 
   const [executive] = await db
     .insert(executives)
     .values({
       fullName: "Catalina Rojas",
       title: "Ejecutiva Proveedor Regional",
-      email: "catalina.rojas@sicrep.cl",
+      email: "catalina.rojas@proveedorregional.com",
     })
     .returning();
 
@@ -65,7 +65,7 @@ async function seed() {
   const [providerUser] = await db
     .insert(users)
     .values({
-      email: "proveedor@demo.sicrep.cl",
+      email: "proveedor@demo.proveedorregional.com",
       passwordHash: providerPasswordHash,
       fullName: "Juan Pérez",
       role: "provider",
@@ -132,7 +132,7 @@ async function seed() {
   const [companyUser] = await db
     .insert(users)
     .values({
-      email: "empresa@demo.sicrep.cl",
+      email: "empresa@demo.proveedorregional.com",
       passwordHash: companyPasswordHash,
       fullName: "Ana Muñoz",
       role: "company_admin",
@@ -218,9 +218,9 @@ async function seed() {
 
   const adminPasswordHash = await bcrypt.hash("admin123", 10);
   await db.insert(users).values({
-    email: "admin@demo.sicrep.cl",
+    email: "admin@demo.proveedorregional.com",
     passwordHash: adminPasswordHash,
-    fullName: "Administración SICREP",
+    fullName: "Administración Proveedor Regional",
     role: "admin",
   });
 
@@ -231,9 +231,9 @@ async function seed() {
   console.log("Cupos por comuna:", comunasConCupos.map((c) => `${c.nombre}: ${c.cupos}`).join(", "));
 
   console.log("Listo. Credenciales de prueba:");
-  console.log("  Proveedor: proveedor@demo.sicrep.cl / proveedor123");
-  console.log("  Empresa:   empresa@demo.sicrep.cl / empresa123");
-  console.log("  Admin:     admin@demo.sicrep.cl / admin123");
+  console.log("  Proveedor: proveedor@demo.proveedorregional.com / proveedor123");
+  console.log("  Empresa:   empresa@demo.proveedorregional.com / empresa123");
+  console.log("  Admin:     admin@demo.proveedorregional.com / admin123");
   await pool.end();
 }
 

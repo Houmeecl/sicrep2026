@@ -465,7 +465,7 @@ export const storage = {
       throw Object.assign(new Error("No quedan cupos disponibles en esta comuna"), { status: 409 });
     }
 
-    const commerceOrder = `sicrep-conv-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    const commerceOrder = `pr-conv-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
     const [inscripcion] = await db
       .insert(convocatoriaInscripciones)

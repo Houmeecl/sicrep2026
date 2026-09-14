@@ -48,8 +48,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        "sicrep-gradient": "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--violet)) 55%, hsl(var(--accent)) 100%)",
-        "sicrep-gradient-soft": "linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--violet) / 0.08) 55%, hsl(var(--accent) / 0.08) 100%)",
+        "brand-gradient": "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--violet)) 55%, hsl(var(--accent)) 100%)",
+        "brand-gradient-soft": "linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--violet) / 0.08) 55%, hsl(var(--accent) / 0.08) 100%)",
       },
     },
   },

@@ -187,7 +187,7 @@ export const cardEvents = pgTable("card_events", {
 });
 
 // --- Financiamiento verde ---
-// El estado refleja lo informado por la entidad financiera externa. SICREP no aprueba ni
+// El estado refleja lo informado por la entidad financiera externa. Proveedor Regional no aprueba ni
 // desembolsa fondos: solo registra la postulación y su estado reportado.
 
 export const greenFinancingProjects = pgTable("green_financing_projects", {

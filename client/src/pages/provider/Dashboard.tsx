@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import { formatCLP } from "@/lib/utils";
-import logoSicrep from "@/assets/logo-sicrep.png";
+import logoProveedorRegional from "@/assets/logo-proveedor-regional.png";
 import {
   CreditCard,
   ShieldCheck,
@@ -131,7 +131,7 @@ export default function ProviderDashboard() {
       <header className="border-b border-border bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-2 font-extrabold">
-            <img src={logoSicrep} alt="SICREP — Proveedor Regional" className="h-16 w-16 rounded-lg" />
+            <img src={logoProveedorRegional} alt="Proveedor Regional" className="h-16 w-16 rounded-lg" />
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">{user.fullName}</span>
@@ -406,7 +406,7 @@ function FinanciamientoTab({ data, onChanged }: { data: DashboardData; onChanged
       <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
-          La aprobación del financiamiento corresponde siempre a la entidad financiera. SICREP no aprueba ni
+          La aprobación del financiamiento corresponde siempre a la entidad financiera. Proveedor Regional no aprueba ni
           desembolsa fondos: solo registra tu postulación y el estado que esa entidad informe.
         </p>
       </div>
@@ -512,7 +512,7 @@ function ImpactoTab({ data, onChanged }: { data: DashboardData; onChanged: () =>
       <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
-          Los puntos son incentivos internos del programa SICREP — no son créditos de carbono ni dinero, y no
+          Los puntos son incentivos internos del programa Proveedor Regional — no son créditos de carbono ni dinero, y no
           existe (todavía) una equivalencia oficial de puntos por tCO2e. La reducción que reportas aquí es una{" "}
           <strong>estimación</strong>: solo se vuelve "validada" cuando la empresa patrocinadora revisa tu evidencia.
         </p>

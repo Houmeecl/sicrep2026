@@ -51,7 +51,7 @@ export default function Login() {
             </Button>
           </form>
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Demo: proveedor@demo.sicrep.cl / proveedor123 · empresa@demo.sicrep.cl / empresa123
+            Demo: proveedor@demo.proveedorregional.com / proveedor123 · empresa@demo.proveedorregional.com / empresa123
           </p>
           <p className="mt-4 text-center text-sm">
             ¿No tienes cuenta? <Link href="/registro" className="font-semibold text-primary underline">Regístrate</Link>
