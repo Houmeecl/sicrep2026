@@ -33,7 +33,50 @@ import { INSCRIPTION_FEE_CLP } from "./services/cupos";
 import { MEMBERSHIP_FEE_CLP } from "./services/membresia";
 import { createPayment, getPaymentStatus, isFlowConfigured } from "./services/flow";
 import { sortearGanadores, CUPOS_VIAJE_BRASIL } from "./services/sorteo";
+import { createInsurancePolicy, isNicoSegurosConfigured } from "./services/nicoSeguros";
 import type { FounderReviewInput } from "@shared/schema";
+
+// Emite la protección del proveedor: intenta una póliza real vía Nico Seguros si hay
+// credenciales configuradas; si no las hay, o la llamada real falla, cae al registro
+// simulado (marcado explícitamente como tal — nunca se presenta como real sin serlo).
+async function createInsurancePolicyForProvider(
+  providerId: number,
+  plan: "base" | "desarrollo" | "empresa",
+  companyName: string,
+  rut: string
+) {
+  if (isNicoSegurosConfigured()) {
+    try {
+      const categoryId = process.env.NICO_SEGUROS_DEFAULT_CATEGORY_ID;
+      const companyId = process.env.NICO_SEGUROS_DEFAULT_COMPANY_ID;
+      if (categoryId && companyId) {
+        const policy = await createInsurancePolicy({
+          providerRut: rut,
+          providerCompanyName: companyName,
+          insuranceCategoryId: categoryId,
+          insuranceCompanyId: companyId,
+        });
+        await db.insert(insurancePolicies).values({
+          providerId,
+          coverageType: policy.coverageType ?? defaultCoverageForPlan(plan),
+          status: "activa",
+          source: "nico_seguros",
+          nicoPolicyId: policy.id,
+        });
+        return;
+      }
+    } catch (err) {
+      console.error("Nico Seguros: no se pudo emitir póliza real, se usa fallback simulado.", err);
+    }
+  }
+
+  await db.insert(insurancePolicies).values({
+    providerId,
+    coverageType: defaultCoverageForPlan(plan),
+    status: "activa",
+    source: "simulado",
+  });
+}
 
 export const storage = {
   async getUserByEmail(email: string) {
@@ -83,11 +126,7 @@ export const storage = {
       status: "activa",
     });
 
-    await db.insert(insurancePolicies).values({
-      providerId: provider.id,
-      coverageType: defaultCoverageForPlan(provider.plan),
-      status: "activa",
-    });
+    await createInsurancePolicyForProvider(provider.id, provider.plan, provider.companyName, provider.rut);
 
     return provider;
   },

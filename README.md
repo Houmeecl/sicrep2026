@@ -56,9 +56,14 @@ npm start
 - **Tarjeta Pomelo:** `server/services/pomelo.ts` simula la emisión y el saldo
   de la Tarjeta Proveedor Regional. Cuando exista convenio y credenciales con
   Pomelo, solo esta capa cambia de implementación (no las rutas ni la UI).
-- **Protección paramétrica:** `server/services/parametric.ts` define coberturas
-  de ejemplo; en producción se conectaría a un proveedor de datos (clima,
-  continuidad operacional) que dispare pagos automáticos.
+- **Protección / seguros (Nico Seguros):** `server/services/nicoSeguros.ts` integra la
+  API real de Nico Seguros (login, emisión y consulta de pólizas). Preparada pero **no
+  conectada** — faltan credenciales (`NICO_SEGUROS_EMAIL`, `NICO_SEGUROS_PASSWORD`, y para
+  emitir pólizas también `NICO_SEGUROS_DEFAULT_CATEGORY_ID` / `NICO_SEGUROS_DEFAULT_COMPANY_ID`).
+  Mientras no estén configuradas (o si la llamada real falla), el sistema usa el fallback
+  simulado de `server/services/parametric.ts`, y cada póliza queda marcada en la base de
+  datos (`insurance_policies.source`) como `"simulado"` o `"nico_seguros"` según corresponda
+  — nunca se presenta una cobertura simulada como real.
 - **Módulo de tarjetas externo ("Cursor"):** `server/services/cursor-integration.ts`
   solo documenta la interfaz esperada — no está identificado ni implementado.
   La emisión de tarjetas sigue usando la simulación de `pomelo.ts`.

@@ -171,6 +171,11 @@ export const insurancePolicies = pgTable("insurance_policies", {
   status: policyStatusEnum("status").notNull().default("activa"),
   startDate: timestamp("start_date").notNull().defaultNow(),
   endDate: timestamp("end_date"),
+
+  // Origen de la póliza: "simulado" mientras no haya credenciales reales de Nico Seguros
+  // configuradas; "nico_seguros" cuando la póliza fue emitida de verdad vía su API.
+  source: varchar("source", { length: 32 }).notNull().default("simulado"),
+  nicoPolicyId: varchar("nico_policy_id", { length: 64 }),
 });
 
 // --- Finanzas sostenibles: bitácora de controles de tarjeta ---

@@ -74,7 +74,7 @@ interface ImpactRecordT {
 interface DashboardData {
   provider: { companyName: string; plan: string; developmentLevel: number; region: string };
   account?: { balance: string; creditLine: string; status: string; cardNumberMasked: string };
-  policies: { id: number; coverageType: string; status: string }[];
+  policies: { id: number; coverageType: string; status: string; source: string }[];
   enrollments: { id: number; title: string; category: string; progress: number; completed: boolean }[];
   upcomingSessions: { id: number; topic: string; scheduledAt: string }[];
   executive?: { fullName: string; title: string; email: string };
@@ -197,7 +197,11 @@ function ResumenTab({ data }: { data: DashboardData }) {
               <>
                 <p className="text-sm font-medium">{data.policies[0].coverageType}</p>
                 <Badge variant="success" className="mt-2">{data.policies[0].status}</Badge>
-                <p className="mt-2 text-xs text-muted-foreground">Cobertura simulada — sin pagos ni siniestros reales.</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {data.policies[0].source === "nico_seguros"
+                    ? "Póliza real emitida vía Nico Seguros."
+                    : "Cobertura simulada — sin pagos ni siniestros reales (integración con Nico Seguros preparada, pendiente de credenciales)."}
+                </p>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Sin cobertura activa</p>
