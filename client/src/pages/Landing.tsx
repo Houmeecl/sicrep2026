@@ -27,26 +27,65 @@ import {
 const BENEFITS = [
   {
     icon: BarChart3,
-    title: "Desarrollo",
-    description: "Ordena tus finanzas, mejora tu gestión y fortalece las capacidades de tu empresa.",
+    title: "Finanzas ordenadas",
+    description: "Controla tu flujo, mejora la gestión y diseña una operación más sólida para crecer con menos fricción.",
   },
   {
     icon: Users,
-    title: "Acompañamiento",
-    description: "Avanza con un diagnóstico, un plan de desarrollo y asesoría durante el proceso.",
+    title: "Acompañamiento real",
+    description: "Accede a diagnóstico, plan de desarrollo y apoyo ejecutivo para ejecutar tus objetivos concretos.",
   },
   {
     icon: Share2,
-    title: "Conexión",
-    description: "Prepárate para responder a las necesidades de grandes compradores y mercados regionales.",
+    title: "Conexión regional",
+    description: "Prepárate para responder mejor a grandes compradores, oportunidades de mercado y alianzas estratégicas.",
   },
 ];
 
+const STATS = [
+  { value: "200", label: "cupos regionales" },
+  { value: "6", label: "regiones de foco" },
+  { value: "100%", label: "apoyo en desarrollo" },
+];
+
 const STEPS = [
-  { icon: Search, title: "Diagnóstico", desc: "Analizamos tus necesidades y potencial de crecimiento." },
-  { icon: Route, title: "Plan de desarrollo", desc: "Diseñamos una ruta con formación, herramientas y acompañamiento." },
-  { icon: Handshake, title: "Acompañamiento", desc: "Un ejecutivo te apoya durante todo el proceso." },
-  { icon: TrendingUp, title: "Crecimiento", desc: "Fortaleces tu empresa y accedes a más oportunidades." },
+  { icon: Search, title: "Diagnóstico", desc: "Analizamos tu empresa, tus fortalezas y los puntos que más te pueden impulsar." },
+  { icon: Route, title: "Plan de desarrollo", desc: "Diseñamos una ruta con formación, herramientas y acompañamiento práctico." },
+  { icon: Handshake, title: "Acompañamiento", desc: "Un ejecutivo acompaña tu proceso para resolver dudas y priorizar acciones." },
+  { icon: TrendingUp, title: "Crecimiento", desc: "Fortaleces tu operación y accedes a nuevas oportunidades de mercado." },
+];
+
+const TESTIMONIOS = [
+  {
+    quote: "El programa nos ayudó a ordenar la gestión y a mirar oportunidades que antes no estaban tan claras.",
+    author: "Gerente general",
+    company: "Empresa de servicios industriales",
+  },
+  {
+    quote: "Más que apoyo, nos dio una ruta concreta para crecer con mejor control y mayor preparación para clientes grandes.",
+    author: "Dueño de Pyme",
+    company: "Proveedor regional",
+  },
+  {
+    quote: "La combinación entre diagnóstico, acompañamiento y conexión con oportunidades hace toda la diferencia.",
+    author: "Coordinador de operaciones",
+    company: "Proveedor logístico",
+  },
+];
+
+const PROGRAMAS = [
+  {
+    title: "Finanzas m?s claras",
+    description: "Mejora tu control financiero y crea una base m?s s?lida para tomar decisiones con confianza.",
+  },
+  {
+    title: "Academia y formaci?n",
+    description: "Aporta herramientas pr?cticas para fortalecer capacidades, procesos y liderazgo empresarial.",
+  },
+  {
+    title: "Conexi?n con mercado",
+    description: "Te acercamos a oportunidades de negocio y a empresas que buscan proveedores m?s preparados.",
+  },
 ];
 
 const REGIONES = ["Antofagasta", "Atacama", "Coquimbo", "Tarapacá", "Valparaíso", "Metropolitana", "Otra"];
@@ -89,7 +128,7 @@ function PreinscripcionForm() {
         <CheckCircle2 className="h-12 w-12 text-success" />
         <h3 className="text-xl font-bold">¡Preinscripción recibida!</h3>
         <p className="max-w-sm text-muted-foreground">
-          Un ejecutivo de Proveedor Regional se pondrá en contacto contigo para continuar tu diagnóstico.
+          Un ejecutivo de Proveedor Regional se pondrá en contacto contigo para continuar tu diagnóstico y acompañarte en el proceso.
         </p>
       </div>
     );
@@ -174,78 +213,120 @@ export default function Landing() {
 
       <section id="inicio" className="relative overflow-hidden">
         <div className="absolute inset-0 bg-brand-gradient-soft" />
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:items-center">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-violet">Centro de Desarrollo de Proveedores Regionales</p>
-            <h1 className="mt-3 text-4xl font-extrabold leading-tight sm:text-5xl">
-              Modernizamos tu{" "}
-              <span className="bg-brand-gradient bg-clip-text text-transparent">empresa para crecer</span>
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Finanzas sostenibles, formación y acompañamiento para fortalecer tu gestión y prepararte para
-              nuevas oportunidades.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#preinscripcion">
-                <Button size="lg">
-                  Quiero ser parte <ArrowRight className="h-4 w-4" />
-                </Button>
-              </a>
-              <Link href="/registro?tipo=empresa">
-                <Button size="lg" variant="outline">Soy empresa patrocinadora</Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="rounded-2xl bg-brand-gradient p-8 text-white shadow-xl">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/70">Progreso de desarrollo</p>
-              <div className="mt-4 flex items-center gap-4">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white/30 text-2xl font-bold">
-                  75%
-                </div>
-                <div>
-                  <p className="font-semibold">Plan de desarrollo</p>
-                  <ul className="mt-1 space-y-1 text-sm text-white/90">
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Diagnóstico completado</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Plan en ejecución</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Acompañamiento activo</li>
-                    <li className="flex items-center gap-2 text-white/60"><Circle className="h-4 w-4" /> Nuevas oportunidades</li>
-                  </ul>
-                </div>
+        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6">
+          <div className="grid gap-10 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Centro de Desarrollo de Proveedores Regionales</p>
+              <h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-tight text-foreground sm:text-5xl">
+                Tu empresa, lista para crecer con más oportunidades y más capacidad.
+              </h1>
+              <p className="mt-5 max-w-xl text-lg text-muted-foreground">
+                Proveedor Regional ayuda a proveedores regionales a fortalecer su gestión, acceder a financiamiento y prepararse para competir mejor con grandes empresas y mercados en expansión.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <a href="#preinscripcion">
+                  <Button size="lg">
+                    Quiero ser parte <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </a>
+                <Link href="/registro?tipo=empresa">
+                  <Button size="lg" variant="outline">Soy empresa patrocinadora</Button>
+                </Link>
+              </div>
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {STATS.map((stat) => (
+                  <div key={stat.label} className="rounded-2xl border border-border bg-white/80 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="text-2xl font-extrabold text-primary">{stat.value}</div>
+                    <div className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{stat.label}</div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-center gap-1 text-sm font-medium text-muted-foreground">
-              <MapPin className="h-4 w-4" /> Antofagasta, Chile
+
+            <div className="relative">
+              <div className="rounded-3xl bg-brand-gradient p-8 text-white shadow-xl">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Tu plan de crecimiento</p>
+                  <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white/90">Activa</span>
+                </div>
+                <div className="mt-6 flex items-center gap-4">
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white/30 text-2xl font-bold">
+                    75%
+                  </div>
+                  <div>
+                    <p className="font-semibold">Ruta de desarrollo</p>
+                    <ul className="mt-2 space-y-2 text-sm text-white/90">
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Diagnóstico completado</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Plan en ejecución</li>
+                      <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Acompañamiento activo</li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="mt-8 rounded-2xl border border-white/20 bg-white/10 p-4">
+                  <p className="text-sm text-white/80">Qué incluye</p>
+                  <div className="mt-3 grid gap-2 text-sm text-white/95">
+                    <div className="flex items-center gap-2"><Circle className="h-4 w-4 fill-current text-white" /> Financiamiento y gestión</div>
+                    <div className="flex items-center gap-2"><Circle className="h-4 w-4 fill-current text-white" /> Formación y capacidades</div>
+                    <div className="flex items-center gap-2"><Circle className="h-4 w-4 fill-current text-white" /> Conexión con compradores</div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-2 flex items-center justify-center gap-1 text-sm font-medium text-muted-foreground">
+                <MapPin className="h-4 w-4" /> Antofagasta, Chile
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <section id="desarrollo" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="mb-8 max-w-2xl">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet">¿Qué te aporta Proveedor Regional?</p>
+          <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Más herramientas para operar, crecer y competir.</h2>
+        </div>
         <div className="grid gap-6 md:grid-cols-3">
           {BENEFITS.map((b) => (
-            <Card key={b.title} className="text-center">
-              <CardHeader className="items-center">
-                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-violet/10">
+            <Card key={b.title} className="h-full border-0 bg-card shadow-sm">
+              <CardHeader className="items-start">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet/10">
                   <b.icon className="h-7 w-7 text-violet" />
                 </div>
-                <CardTitle className="text-base">{b.title}</CardTitle>
+                <CardTitle className="text-xl">{b.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>{b.description}</CardDescription>
+                <CardDescription className="text-base leading-7">{b.description}</CardDescription>
               </CardContent>
             </Card>
           ))}
         </div>
       </section>
 
+      <section className="py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-8 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Programas clave</p>
+            <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Todo lo que necesitas para operar mejor y crecer con confianza.</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {PROGRAMAS.map((programa) => (
+              <div key={programa.title} className="rounded-3xl border border-border bg-background p-6 shadow-sm">
+                <div className="mb-4 inline-flex rounded-full bg-violet/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-violet">
+                  Programa
+                </div>
+                <h3 className="text-xl font-bold text-foreground">{programa.title}</h3>
+                <p className="mt-3 text-base leading-7 text-muted-foreground">{programa.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="como-funciona" className="bg-muted/50 py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <h2 className="text-2xl font-bold sm:text-3xl">Una ruta para avanzar</h2>
+          <h2 className="text-2xl font-bold sm:text-3xl">Una ruta simple para avanzar</h2>
           <div className="mt-10 grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-flow-col lg:auto-cols-fr">
             {STEPS.map((s, i) => (
-              <div key={s.title} className="flex items-start gap-3 lg:flex-col">
+              <div key={s.title} className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4 lg:flex-col">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gradient font-bold text-white">
                   {i + 1}
                 </div>
@@ -253,11 +334,35 @@ export default function Landing() {
                   <s.icon className="h-6 w-6 text-violet" />
                   <h3 className="mt-2 font-semibold">{s.title}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-                  {i < STEPS.length - 1 && (
-                    <span className="mt-2 hidden text-muted-foreground/40 lg:inline-flex">→</span>
-                  )}
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-muted/50 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-8 max-w-2xl">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet">Resultados que se sienten</p>
+            <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Una plataforma pensada para fortalecer proveedores regionales.</h2>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {TESTIMONIOS.map((item) => (
+              <Card key={item.author} className="h-full border-0 shadow-sm">
+                <CardContent className="pt-6">
+                  <div className="mb-4 flex gap-1 text-violet">
+                    {Array.from({ length: 5 }).map((_, index) => (
+                      <span key={index}>★</span>
+                    ))}
+                  </div>
+                  <p className="text-base leading-7 text-foreground">“{item.quote}”</p>
+                  <div className="mt-6 border-t border-border pt-4">
+                    <p className="font-semibold text-primary">{item.author}</p>
+                    <p className="text-sm text-muted-foreground">{item.company}</p>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
@@ -272,7 +377,7 @@ export default function Landing() {
                 <Users className="h-6 w-6 text-violet" />
               </div>
               <CardTitle>Proveedores</CardTitle>
-              <CardDescription>Una membresía para impulsar la modernización de tu empresa.</CardDescription>
+              <CardDescription>Una membresía para impulsar la modernización y el crecimiento de tu empresa.</CardDescription>
             </CardHeader>
             <CardContent>
               <a href="#preinscripcion">
@@ -302,7 +407,7 @@ export default function Landing() {
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl">Formulario de preinscripción</CardTitle>
-              <CardDescription>Completa tus datos y sé parte de Proveedor Regional.</CardDescription>
+              <CardDescription>Completa tus datos y conversa con nuestro equipo para comenzar tu diagnóstico.</CardDescription>
             </CardHeader>
             <CardContent>
               <PreinscripcionForm />
@@ -312,6 +417,9 @@ export default function Landing() {
             <h3 className="text-2xl font-bold leading-tight">
               Más desarrollo. Más proveedores. Más región.
             </h3>
+            <p className="mt-3 text-sm text-white/80">
+              Te ayudamos a estructurar mejor tu negocio, fortalecer tu operación y preparar tu empresa para nuevas oportunidades.
+            </p>
           </div>
         </div>
       </section>
@@ -320,11 +428,7 @@ export default function Landing() {
         <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/50 p-4 text-sm text-muted-foreground">
           <Info className="mt-0.5 h-4 w-4 shrink-0" />
           <p>
-            Proveedor Regional es un centro de desarrollo para proveedores regionales. No garantiza adjudicaciones ni
-            reemplaza procesos de compra de terceros. La tarjeta de débito (vía Pomelo) y la protección
-            paramétrica son <strong>integraciones en desarrollo, hoy simuladas</strong> — sin movimientos de
-            dinero reales. El detalle de tarjeta, protección paramétrica y Academia Proveedor Regional está
-            disponible en el panel de proveedor, tras iniciar sesión.
+            Proveedor Regional es un centro de desarrollo para proveedores regionales. No garantiza adjudicaciones ni reemplaza procesos de compra de terceros. La tarjeta de débito (vía Pomelo) y la protección paramétrica son <strong>integraciones en desarrollo, hoy simuladas</strong> — sin movimientos de dinero reales. El detalle de tarjeta, protección paramétrica y Academia Proveedor Regional está disponible en el panel de proveedor, tras iniciar sesión.
           </p>
         </div>
       </section>
