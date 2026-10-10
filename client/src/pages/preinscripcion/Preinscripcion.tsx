@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { rememberToken } from "@/lib/preinscripcion";
 import { formatRut, isValidRut } from "@shared/rut";
+import { PREINSCRIPCION_TERMINOS_VERSION } from "@shared/terminos";
 import logoProveedorRegional from "@/assets/logo-proveedor-regional.png";
 import { ShieldCheck, Mail, FileCheck2, CreditCard, Wallet, Plus, Trash2, ArrowRight } from "lucide-react";
 
@@ -319,7 +320,16 @@ export default function Preinscripcion() {
                 <label className="flex items-start gap-3">
                   <input type="checkbox" name="aceptaTerminos" required className="mt-1 h-4 w-4" />
                   <span>
-                    Acepto los términos y condiciones de la preinscripción a la membresía Proveedor Regional (versión 2026-10).
+                    Acepto los{" "}
+                    <a
+                      href={`/preinscripcion/terminos/${PREINSCRIPCION_TERMINOS_VERSION}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-primary underline"
+                    >
+                      términos y condiciones de la preinscripción
+                    </a>{" "}
+                    a la membresía Proveedor Regional (versión {PREINSCRIPCION_TERMINOS_VERSION}).
                   </span>
                 </label>
                 <label className="flex items-start gap-3">

@@ -123,9 +123,12 @@ Puesta en marcha:
    pay.google.com/business/console activar Google Wallet API, crear una cuenta de servicio con acceso al emisor
    y guardar su clave privada en PEM.
 
-Pendiente de confirmar por negocio: vigencia de la tarjeta (`PREINSCRIPCION_VIGENCIA_MESES`, por defecto 12),
-texto definitivo de términos y condiciones (versión `2026-10` registrada en cada consentimiento) y procedimiento de
-devolución si un KYC se rechaza después del pago.
+Términos y condiciones: `shared/terminos.ts`, publicados en `/preinscripcion/terminos/2026-10` y enlazados desde el
+formulario; cada consentimiento guarda la versión aceptada. **Revisión legal antes de operar.** Una versión publicada
+no se edita: los cambios van en una versión nueva.
+
+Pendiente de confirmar por negocio: vigencia de la tarjeta (`PREINSCRIPCION_VIGENCIA_MESES`, por defecto 12) y plazo
+de devolución si un KYC se rechaza después del pago (los segundos cobros quedan marcados `pago_duplicado`).
 
 ## Publicar en GitHub
 

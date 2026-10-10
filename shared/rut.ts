@@ -6,7 +6,8 @@
  */
 
 export function cleanRut(rut: string): string {
-  return rut.replace(/[^0-9kK]/g, "").toUpperCase();
+  // Se quitan los ceros a la izquierda: "07.123.456-8" y "7.123.456-8" son el mismo RUT.
+  return rut.replace(/[^0-9kK]/g, "").toUpperCase().replace(/^0+/, "");
 }
 
 export function computeDv(body: string): string {
@@ -27,8 +28,8 @@ export function isValidRut(rut: string): boolean {
   if (clean.length < 2) return false;
   const body = clean.slice(0, -1);
   const dv = clean.slice(-1);
-  if (!/^\d{1,8}$/.test(body)) return false;
-  if (Number(body) < 1_000_000) return false;
+  // Cuerpo de 1 a 8 dígitos sin ceros a la izquierda: una sola escritura canónica por RUT.
+  if (!/^[1-9]\d{0,7}$/.test(body)) return false;
   return computeDv(body) === dv;
 }
 

@@ -45,7 +45,9 @@ jobs:
               npm install -g pm2
             fi
 
-            cat > .env <<EOF
+            # Delimitador entre comillas: GitHub ya sustituyó los secrets y el shell no debe
+            # expandir $, comillas invertidas ni $(...) que vengan dentro de una contraseña.
+            cat > .env <<'EOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
             PORT=5000

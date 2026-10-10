@@ -637,7 +637,7 @@ export const registerSchema = z.object({
 
 // --- Preinscripción: validaciones de entrada ---
 
-export const PREINSCRIPCION_TERMINOS_VERSION = "2026-10";
+export { PREINSCRIPCION_TERMINOS_VERSION } from "./terminos";
 
 export const DOCUMENTO_TIPOS = ["cedula_frente", "cedula_reverso", "inicio_actividades", "escritura_poderes"] as const;
 export type DocumentoTipo = (typeof DOCUMENTO_TIPOS)[number];

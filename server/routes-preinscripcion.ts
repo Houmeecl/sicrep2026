@@ -32,12 +32,16 @@ function uploadArchivo(req: Request, res: Response, next: NextFunction) {
   });
 }
 
-// Límite simple por IP (en memoria) para creación y verificación de códigos.
+// Límite por IP (en memoria, un proceso). Cada instancia ya es propia de su ruta, así que la
+// clave es solo la IP: cambiar el :id o el :code de la URL no abre un cupo nuevo.
 function rateLimit(max: number, windowMs: number) {
   const hits = new Map<string, number[]>();
   return (req: Request, res: Response, next: NextFunction) => {
-    const key = `${req.ip}:${req.path}`;
+    const key = req.ip ?? "desconocida";
     const now = Date.now();
+    if (hits.size > 10_000) {
+      for (const [k, v] of hits) if (!v.some((t) => now - t < windowMs)) hits.delete(k);
+    }
     const list = (hits.get(key) ?? []).filter((t) => now - t < windowMs);
     if (list.length >= max) return res.status(429).json({ message: "Demasiadas solicitudes, intenta más tarde" });
     list.push(now);
@@ -63,6 +67,16 @@ async function loadOwned(req: Request) {
     req.session.preinscripcionIds = [...(req.session.preinscripcionIds ?? []), id];
   }
   return p;
+}
+
+/** Autoriza al postulante ANTES de leer el cuerpo multipart: nadie anónimo ocupa memoria con archivos. */
+function requireOwned(req: Request, res: Response, next: NextFunction) {
+  loadOwned(req)
+    .then((p) => {
+      res.locals.preinscripcion = p;
+      next();
+    })
+    .catch(next);
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -135,9 +149,11 @@ export function registerPreinscripcionRoutes(app: Express) {
 
   app.post(
     "/api/preinscripcion/:id/documentos",
+    rateLimit(40, 60 * 60 * 1000),
+    requireOwned,
     uploadArchivo,
     wrap(async (req, res) => {
-      const p = await loadOwned(req);
+      const p = res.locals.preinscripcion as Awaited<ReturnType<typeof loadOwned>>;
       const tipo = String(req.body?.tipo ?? "") as DocumentoTipo;
       if (!DOCUMENTO_TIPOS.includes(tipo)) return res.status(400).json({ message: "Tipo de documento inválido" });
       if (!req.file) return res.status(400).json({ message: "Adjunta un archivo" });

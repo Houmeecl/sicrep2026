@@ -13,6 +13,7 @@ import NotFound from "@/pages/NotFound";
 import Preinscripcion from "@/pages/preinscripcion/Preinscripcion";
 import PreinscripcionEstado from "@/pages/preinscripcion/Estado";
 import Verificar from "@/pages/preinscripcion/Verificar";
+import Terminos from "@/pages/preinscripcion/Terminos";
 import AdminPreinscripciones from "@/pages/admin/Preinscripciones";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,8 @@ export default function App() {
           <Route path="/preinscripcion" component={Preinscripcion} />
           <Route path="/preinscripcion/estado" component={PreinscripcionEstado} />
           <Route path="/verificar/:code" component={Verificar} />
+          <Route path="/preinscripcion/terminos" component={Terminos} />
+          <Route path="/preinscripcion/terminos/:version" component={Terminos} />
           <Route path="/admin/preinscripciones" component={AdminPreinscripciones} />
           <Route path="/login" component={Login} />
           <Route path="/registro" component={Register} />

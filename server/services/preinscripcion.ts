@@ -96,8 +96,14 @@ export function checkAccessToken(p: Preinscripcion, token: string | undefined | 
   return safeEqualHex(p.accessTokenHash, hashAccessToken(token));
 }
 
+// Eventos sin solicitud de una persona (webhook de Flow, emisión automática, correos) quedan
+// marcados como "sistema" en vez de una IP vacía.
+const ORIGEN_SISTEMA = "sistema";
+
 async function logEvento(preinscripcionId: number, tipo: string, detalle = "", extra: { actorUserId?: number; ip?: string } = {}) {
-  await db.insert(preinscripcionEventos).values({ preinscripcionId, tipo, detalle, actorUserId: extra.actorUserId, ip: extra.ip });
+  await db
+    .insert(preinscripcionEventos)
+    .values({ preinscripcionId, tipo, detalle, actorUserId: extra.actorUserId, ip: extra.ip || ORIGEN_SISTEMA });
 }
 
 export async function getById(id: number): Promise<Preinscripcion | undefined> {
@@ -381,56 +387,77 @@ export async function confirmarPagoPorToken(token: string): Promise<Preinscripci
   const [intento] = await db.select().from(preinscripcionPagos).where(eq(preinscripcionPagos.flowToken, token));
   if (!intento) throw httpError(404, "Pago no encontrado");
   const p = (await getById(intento.preinscripcionId))!;
-  if (intento.status === "pagado") return p;
+  // Solo se da por terminado si el pago Y la preinscripción ya quedaron registrados; si un
+  // intento anterior se cortó a medias, el reintento de Flow completa lo que faltó.
+  if (intento.status === "pagado" && p.paymentStatus === "pagado") return p;
 
   const status = await getPaymentStatus(token);
   const raw = status.raw as { amount?: number | string; commerceOrder?: string };
   const estado = FLOW_MAP[status.status] ?? "en_proceso";
+  const rawJson = JSON.stringify(status.raw);
 
   if (estado === "pagado") {
-    // Defensa adicional: el pago confirmado debe ser de esta orden y por el monto exacto.
-    if (String(raw.commerceOrder) !== intento.commerceOrder || Math.round(Number(raw.amount)) !== PREINSCRIPCION_FEE_CLP) {
-      await logEvento(p.id, "pago_inconsistente", JSON.stringify(status.raw));
+    // Defensa adicional: el pago confirmado debe ser de esta orden y por el monto exacto (sin redondeos).
+    if (String(raw.commerceOrder) !== intento.commerceOrder || Number(raw.amount) !== PREINSCRIPCION_FEE_CLP) {
+      await logEvento(p.id, "pago_inconsistente", rawJson);
       throw httpError(409, "El pago informado por Flow no coincide con la orden");
     }
   }
 
-  await db
-    .update(preinscripcionPagos)
-    .set({ status: estado, rawStatus: JSON.stringify(status.raw), updatedAt: new Date() })
-    .where(eq(preinscripcionPagos.id, intento.id));
-  await logEvento(p.id, `pago_${estado}`, `Flow orden ${status.flowOrder} · ${intento.commerceOrder}`);
-
   if (estado !== "pagado") {
-    // Solo el intento vigente define el estado visible; uno antiguo rechazado no lo pisa.
-    if (p.flowToken === token && p.paymentStatus !== "pagado") {
-      return update(p.id, { paymentStatus: estado, flowRawStatus: JSON.stringify(status.raw) });
-    }
-    return p;
-  }
-
-  // Pago confirmado: se acredita una sola vez (actualización condicional).
-  const [acreditada] = await db
-    .update(preinscripciones)
-    .set({
-      paymentStatus: "pagado",
-      flowToken: token,
-      flowCommerceOrder: intento.commerceOrder,
-      flowFlowOrder: String(status.flowOrder),
-      flowRawStatus: JSON.stringify(status.raw),
-      paidAt: new Date(),
-      kycStatus: p.kycStatus === "borrador" ? "pendiente_revision" : p.kycStatus,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(preinscripciones.id, p.id), ne(preinscripciones.paymentStatus, "pagado")))
-    .returning();
-
-  if (!acreditada) {
-    // Ya estaba pagada por otra orden: este segundo cobro debe devolverse.
-    await logEvento(p.id, "pago_duplicado", `Orden ${intento.commerceOrder} pagada además de la acreditada: requiere devolución`);
+    await db.transaction(async (tx) => {
+      await tx.update(preinscripcionPagos).set({ status: estado, rawStatus: rawJson, updatedAt: new Date() }).where(eq(preinscripcionPagos.id, intento.id));
+      // Solo el intento vigente define el estado visible; uno antiguo rechazado no lo pisa.
+      if (p.flowToken === token && p.paymentStatus !== "pagado") {
+        await tx.update(preinscripciones).set({ paymentStatus: estado, flowRawStatus: rawJson, updatedAt: new Date() }).where(eq(preinscripciones.id, p.id));
+      }
+      await tx.insert(preinscripcionEventos).values({
+        preinscripcionId: p.id,
+        tipo: `pago_${estado}`,
+        detalle: `Flow orden ${status.flowOrder} · ${intento.commerceOrder}`,
+        ip: ORIGEN_SISTEMA,
+      });
+    });
     return (await getById(p.id))!;
   }
 
+  // Pago confirmado: intento, preinscripción y bitácora se escriben en una sola transacción.
+  const { acreditada, duplicado } = await db.transaction(async (tx) => {
+    await tx.update(preinscripcionPagos).set({ status: "pagado", rawStatus: rawJson, updatedAt: new Date() }).where(eq(preinscripcionPagos.id, intento.id));
+    const [acreditada] = await tx
+      .update(preinscripciones)
+      .set({
+        paymentStatus: "pagado",
+        flowToken: token,
+        flowCommerceOrder: intento.commerceOrder,
+        flowFlowOrder: String(status.flowOrder),
+        flowRawStatus: rawJson,
+        paidAt: new Date(),
+        kycStatus: p.kycStatus === "borrador" ? "pendiente_revision" : p.kycStatus,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(preinscripciones.id, p.id), ne(preinscripciones.paymentStatus, "pagado")))
+      .returning();
+    const [actual] = await tx.select().from(preinscripciones).where(eq(preinscripciones.id, p.id));
+    // Ya estaba pagada por OTRA orden: este segundo cobro debe devolverse.
+    const duplicado = !acreditada && actual.flowCommerceOrder !== intento.commerceOrder;
+    await tx.insert(preinscripcionEventos).values({
+      preinscripcionId: p.id,
+      tipo: duplicado ? "pago_duplicado" : "pago_pagado",
+      detalle: duplicado
+        ? `Orden ${intento.commerceOrder} pagada además de la acreditada: requiere devolución`
+        : `Flow orden ${status.flowOrder} · ${intento.commerceOrder}`,
+      ip: ORIGEN_SISTEMA,
+    });
+    return { acreditada, duplicado };
+  });
+
+  if (duplicado || !acreditada) {
+    // Reintento tras un corte: el pago ya estaba acreditado con esta misma orden; se completa la emisión si faltaba.
+    return intentarEmitirTarjeta((await getById(p.id))!);
+  }
+
+  // El correo es un aviso: si falla, el estado ya quedó registrado y se ve en la página del postulante.
   await sendMail({
     to: acreditada.email,
     subject: `Pago recibido — preinscripción ${acreditada.folio}`,
