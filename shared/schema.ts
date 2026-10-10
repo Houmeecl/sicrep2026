@@ -8,8 +8,9 @@ import {
   boolean,
   timestamp,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -312,6 +313,114 @@ export const membershipRegistrations = pgTable("membership_registrations", {
   paidAt: timestamp("paid_at"),
 });
 
+// --- Preinscripción con KYC, pago ($20.000 vía Flow) y tarjeta de membresía en wallet ---
+// Reglas que el código hace cumplir (ver server/services/preinscripcion.ts):
+//  - El pago solo se habilita con correo verificado y documentos KYC obligatorios cargados.
+//  - La tarjeta (código de socio + pases Apple/Google Wallet) se emite SOLO cuando el pago está
+//    confirmado por Flow Y un administrador aprobó el KYC. Nunca antes, nunca simulada.
+//  - Toda acción relevante queda en preinscripcion_eventos (append-only) para auditoría.
+
+export const kycStatusEnum = pgEnum("kyc_status", [
+  "borrador",
+  "pendiente_revision",
+  "observado",
+  "aprobado",
+  "rechazado",
+]);
+
+export const memberCardStatusEnum = pgEnum("member_card_status", ["no_emitida", "vigente", "revocada"]);
+
+export const preinscripciones = pgTable("preinscripciones", {
+  id: serial("id").primaryKey(),
+  folio: varchar("folio", { length: 32 }).notNull().unique(),
+
+  // Contribuyente
+  tipoContribuyente: varchar("tipo_contribuyente", { length: 32 }).notNull(), // persona_juridica | persona_natural
+  razonSocial: varchar("razon_social", { length: 255 }).notNull(),
+  rut: varchar("rut", { length: 16 }).notNull(),
+  giro: varchar("giro", { length: 255 }).notNull(),
+  comuna: varchar("comuna", { length: 128 }).notNull(),
+  direccion: varchar("direccion", { length: 255 }).notNull(),
+
+  // Representante legal / titular
+  repNombre: varchar("rep_nombre", { length: 255 }).notNull(),
+  repRut: varchar("rep_rut", { length: 16 }).notNull(),
+  repCargo: varchar("rep_cargo", { length: 128 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  telefono: varchar("telefono", { length: 32 }).notNull(),
+
+  // Declaraciones KYC
+  esPep: boolean("es_pep").notNull(),
+  pepDetalle: text("pep_detalle").notNull().default(""),
+  beneficiariosFinales: text("beneficiarios_finales").notNull().default("[]"), // JSON [{nombre,rut,porcentaje}]
+  declaraVeracidad: boolean("declara_veracidad").notNull(),
+  aceptaTerminosVersion: varchar("acepta_terminos_version", { length: 32 }).notNull(),
+  consentimientoDatosAt: timestamp("consentimiento_datos_at").notNull(),
+  consentimientoIp: varchar("consentimiento_ip", { length: 64 }).notNull(),
+  consentimientoUserAgent: text("consentimiento_user_agent").notNull().default(""),
+
+  // Verificación de correo (OTP; se guarda solo el hash)
+  emailOtpHash: varchar("email_otp_hash", { length: 128 }),
+  emailOtpExpiresAt: timestamp("email_otp_expires_at"),
+  emailOtpIntentos: integer("email_otp_intentos").notNull().default(0),
+  emailVerificadoAt: timestamp("email_verificado_at"),
+
+  // Acceso del postulante (enlace mágico; se guarda solo el hash)
+  accessTokenHash: varchar("access_token_hash", { length: 128 }).notNull(),
+
+  // KYC
+  kycStatus: kycStatusEnum("kyc_status").notNull().default("borrador"),
+  kycNota: text("kyc_nota").notNull().default(""),
+  kycRevisadoPor: integer("kyc_revisado_por").references(() => users.id),
+  kycRevisadoAt: timestamp("kyc_revisado_at"),
+
+  // Pago (Flow)
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  paymentStatus: paymentStatusEnum("payment_status").notNull().default("pendiente"),
+  flowCommerceOrder: varchar("flow_commerce_order", { length: 64 }),
+  flowToken: varchar("flow_token", { length: 128 }),
+  flowFlowOrder: varchar("flow_flow_order", { length: 64 }),
+  flowRawStatus: text("flow_raw_status"),
+  paidAt: timestamp("paid_at"),
+
+  // Tarjeta de membresía (preinscripción)
+  cardStatus: memberCardStatusEnum("card_status").notNull().default("no_emitida"),
+  memberCode: varchar("member_code", { length: 32 }).unique(),
+  cardSerial: varchar("card_serial", { length: 64 }).unique(),
+  cardEmitidaAt: timestamp("card_emitida_at"),
+  cardValidaHasta: timestamp("card_valida_hasta"),
+  cardRevocadaAt: timestamp("card_revocada_at"),
+  cardRevocacionMotivo: text("card_revocacion_motivo").notNull().default(""),
+
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (t) => ({
+  // Un RUT solo puede tener una preinscripción activa (las rechazadas no bloquean reintentar).
+  rutActivo: uniqueIndex("preinscripciones_rut_activo").on(t.rut).where(sql`kyc_status <> 'rechazado'`),
+}));
+
+export const preinscripcionDocumentos = pgTable("preinscripcion_documentos", {
+  id: serial("id").primaryKey(),
+  preinscripcionId: integer("preinscripcion_id").notNull().references(() => preinscripciones.id),
+  tipo: varchar("tipo", { length: 64 }).notNull(), // cedula_frente | cedula_reverso | inicio_actividades | escritura_poderes
+  nombreOriginal: varchar("nombre_original", { length: 255 }).notNull(),
+  mimeType: varchar("mime_type", { length: 128 }).notNull(),
+  bytes: integer("bytes").notNull(),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  storagePath: text("storage_path").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const preinscripcionEventos = pgTable("preinscripcion_eventos", {
+  id: serial("id").primaryKey(),
+  preinscripcionId: integer("preinscripcion_id").notNull().references(() => preinscripciones.id),
+  tipo: varchar("tipo", { length: 64 }).notNull(),
+  detalle: text("detalle").notNull().default(""),
+  actorUserId: integer("actor_user_id").references(() => users.id),
+  ip: varchar("ip", { length: 64 }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // --- Academia Proveedor Regional ---
 
 export const courses = pgTable("courses", {
@@ -495,6 +604,54 @@ export const registerSchema = z.object({
   region: z.string().optional(),
   industry: z.string().optional(),
 });
+
+// --- Preinscripción: validaciones de entrada ---
+
+export const PREINSCRIPCION_TERMINOS_VERSION = "2026-10";
+
+export const DOCUMENTO_TIPOS = ["cedula_frente", "cedula_reverso", "inicio_actividades", "escritura_poderes"] as const;
+export type DocumentoTipo = (typeof DOCUMENTO_TIPOS)[number];
+
+const beneficiarioSchema = z.object({
+  nombre: z.string().trim().min(3).max(255),
+  rut: z.string().trim().min(3).max(16),
+  porcentaje: z.coerce.number().min(10).max(100),
+});
+
+export const insertPreinscripcionSchema = z.object({
+  tipoContribuyente: z.enum(["persona_juridica", "persona_natural"]),
+  razonSocial: z.string().trim().min(2).max(255),
+  rut: z.string().trim().min(3).max(16),
+  giro: z.string().trim().min(2).max(255),
+  comuna: z.string().trim().min(2).max(128),
+  direccion: z.string().trim().min(4).max(255),
+  repNombre: z.string().trim().min(3).max(255),
+  repRut: z.string().trim().min(3).max(16),
+  repCargo: z.string().trim().min(2).max(128),
+  email: z.string().trim().toLowerCase().email().max(255),
+  telefono: z.string().trim().regex(/^\+?56\s?9\s?\d{4}\s?\d{4}$/, "Teléfono móvil chileno: +56 9 XXXX XXXX"),
+  esPep: z.boolean(),
+  pepDetalle: z.string().trim().max(2000).optional().default(""),
+  beneficiariosFinales: z.array(beneficiarioSchema).max(10).default([]),
+  declaraVeracidad: z.literal(true, { errorMap: () => ({ message: "Debes declarar la veracidad de los datos" }) }),
+  aceptaTerminos: z.literal(true, { errorMap: () => ({ message: "Debes aceptar los términos" }) }),
+  aceptaTratamientoDatos: z.literal(true, { errorMap: () => ({ message: "Debes autorizar el tratamiento de datos" }) }),
+});
+
+export const verificarOtpSchema = z.object({ codigo: z.string().trim().regex(/^\d{6}$/) });
+
+export const kycReviewSchema = z.object({
+  decision: z.enum(["aprobado", "observado", "rechazado"]),
+  nota: z.string().trim().max(2000).default(""),
+});
+
+export const revocarTarjetaSchema = z.object({ motivo: z.string().trim().min(3).max(2000) });
+
+export type Preinscripcion = typeof preinscripciones.$inferSelect;
+export type PreinscripcionDocumento = typeof preinscripcionDocumentos.$inferSelect;
+export type PreinscripcionEvento = typeof preinscripcionEventos.$inferSelect;
+export type InsertPreinscripcion = z.infer<typeof insertPreinscripcionSchema>;
+export type KycReviewInput = z.infer<typeof kycReviewSchema>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

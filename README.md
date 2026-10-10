@@ -83,6 +83,50 @@ de Atacama, María Elena) y pago real vía **Flow** (`server/services/flow.ts`).
   valor provisional para poder probar el flujo — confirmar el monto real del negocio
   antes de operar en producción.
 
+## Preinscripción con KYC, pago de $20.000 y tarjeta en wallet (`/preinscripcion`)
+
+Flujo del postulante: **datos y declaraciones → código por correo → documentos → pago Flow $20.000 →
+revisión KYC → tarjeta de membresía en Apple Wallet / Google Wallet**. Se puede retomar en cualquier
+momento con el enlace personal que llega por correo (`/preinscripcion/estado?id=…&t=…`).
+
+| Ruta | Para quién |
+|---|---|
+| `/preinscripcion` | Formulario: contribuyente, representante, PEP, beneficiarios finales, consentimientos |
+| `/preinscripcion/estado` | Avance, código de correo, carga de documentos, pago, tarjeta y botones wallet |
+| `/verificar/:codigo?s=…` | Página pública que abre el QR de la tarjeta: vigente / vencida / revocada / no auténtica |
+| `/admin/preinscripciones` | Revisión KYC (rol `admin`): documentos, PEP, beneficiarios, bitácora, aprobar/observar/rechazar, revocar |
+
+Qué se verifica (código en `server/services/preinscripcion.ts`):
+
+- **Automático:** dígito verificador de todos los RUT; coherencia persona jurídica/natural; correo por código
+  (HMAC, 10 min, 5 intentos); tipo real de cada archivo (PDF/JPG/PNG por firma binaria) y SHA-256; un solo
+  registro activo por RUT (índice único parcial); pago consultado a Flow con la API firmada, validando orden y
+  monto exacto; límites por IP en creación y códigos.
+- **Manual (admin):** cédula vigente y del representante, inicio de actividades ante el SII, poderes,
+  declaración PEP y beneficiarios finales (≥10%). La existencia de la empresa en el SII **no** se consulta
+  automáticamente: el SII no ofrece una API pública para eso; se acredita con el documento adjunto.
+- **Emisión:** la tarjeta solo se emite con **pago confirmado + KYC aprobado**. El QR lleva una firma HMAC
+  (`CARD_SIGNING_SECRET`) y la verificación lee el estado vivo en la base: una tarjeta revocada o vencida
+  deja de validar de inmediato, aunque el pase siga guardado en el teléfono.
+- **Auditoría:** toda acción queda en `preinscripcion_eventos` (append-only) con IP; los documentos se guardan
+  fuera de la carpeta pública (`UPLOAD_DIR`) con permisos 600.
+
+Puesta en marcha:
+
+1. Variables: ver `.env.example` (Flow, SMTP, `CARD_SIGNING_SECRET`, Apple y Google Wallet).
+   Sin Apple/Google configurados, la tarjeta funciona con su QR y los botones wallet no se muestran.
+   Sin SMTP en producción no se pueden enviar códigos (no se omite la verificación de correo).
+2. `npm run db:push` para crear las tablas nuevas.
+3. Crear un revisor: `ADMIN_PASSWORD="…" npm run admin:create -- revisor@sicr3p.cl "Nombre Apellido"`.
+4. **Apple Wallet:** en developer.apple.com crear un *Pass Type ID*, generar su certificado, exportar
+   certificado y clave a PEM y descargar el intermedio *Apple WWDR G4*. **Google Wallet:** en
+   pay.google.com/business/console activar Google Wallet API, crear una cuenta de servicio con acceso al emisor
+   y guardar su clave privada en PEM.
+
+Pendiente de confirmar por negocio: vigencia de la tarjeta (`PREINSCRIPCION_VIGENCIA_MESES`, por defecto 12),
+texto definitivo de términos y condiciones (versión `2026-10` registrada en cada consentimiento) y procedimiento de
+devolución si un KYC se rechaza después del pago.
+
 ## Publicar en GitHub
 
 Este proyecto se generó como repositorio git local. Para subirlo:

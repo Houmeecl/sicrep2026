@@ -53,7 +53,28 @@ jobs:
             FLOW_SECRET_KEY=${{ secrets.FLOW_SECRET_KEY }}
             FLOW_ENV=${{ secrets.FLOW_ENV }}
             APP_BASE_URL=${{ secrets.APP_BASE_URL }}
+            TRUST_PROXY=${{ secrets.TRUST_PROXY }}
+            UPLOAD_DIR=/var/lib/sicrep/kyc
+            CARD_SIGNING_SECRET=${{ secrets.CARD_SIGNING_SECRET }}
+            PREINSCRIPCION_VIGENCIA_MESES=${{ secrets.PREINSCRIPCION_VIGENCIA_MESES }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            MAIL_FROM=${{ secrets.MAIL_FROM }}
+            APPLE_PASS_TYPE_ID=${{ secrets.APPLE_PASS_TYPE_ID }}
+            APPLE_TEAM_ID=${{ secrets.APPLE_TEAM_ID }}
+            APPLE_WWDR_PEM=${{ secrets.APPLE_WWDR_PEM_PATH }}
+            APPLE_SIGNER_CERT_PEM=${{ secrets.APPLE_SIGNER_CERT_PEM_PATH }}
+            APPLE_SIGNER_KEY_PEM=${{ secrets.APPLE_SIGNER_KEY_PEM_PATH }}
+            APPLE_SIGNER_KEY_PASSPHRASE=${{ secrets.APPLE_SIGNER_KEY_PASSPHRASE }}
+            GOOGLE_WALLET_ISSUER_ID=${{ secrets.GOOGLE_WALLET_ISSUER_ID }}
+            GOOGLE_WALLET_SA_EMAIL=${{ secrets.GOOGLE_WALLET_SA_EMAIL }}
+            GOOGLE_WALLET_SA_PRIVATE_KEY=${{ secrets.GOOGLE_WALLET_SA_PRIVATE_KEY_PATH }}
             EOF
+
+            # Documentos KYC fuera del repositorio (no los toca el git reset) y solo legibles por el servicio.
+            mkdir -p /var/lib/sicrep/kyc && chmod 700 /var/lib/sicrep/kyc
 
             npm ci
             yes | npm run db:push || npm run db:push

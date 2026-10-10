@@ -8,6 +8,8 @@ import { setupVite, serveStatic } from "./vite";
 import { pool } from "./db";
 
 const app = express();
+// Detrás de un proxy (nginx), para que req.ip sea la IP real del cliente (auditoría KYC y límites).
+if (process.env.TRUST_PROXY) app.set("trust proxy", Number(process.env.TRUST_PROXY) || 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
