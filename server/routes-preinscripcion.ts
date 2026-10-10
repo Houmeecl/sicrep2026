@@ -116,8 +116,8 @@ export function registerPreinscripcionRoutes(app: Express) {
     rateLimit(6, 60 * 60 * 1000),
     wrap(async (req, res) => {
       const p = await loadOwned(req);
-      await svc.reenviarOtp(p.id);
-      res.status(204).send();
+      const { accessToken } = await svc.reenviarOtp(p.id);
+      res.json({ accessToken });
     })
   );
 

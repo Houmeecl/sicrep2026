@@ -177,7 +177,15 @@ export default function Estado() {
                   type="button"
                   variant="ghost"
                   disabled={busy}
-                  onClick={() => run(() => apiPre(id, `/api/preinscripcion/${id}/otp/reenviar`, { method: "POST" }), "Te enviamos un código nuevo")}
+                  onClick={() =>
+                    run(
+                      () =>
+                        apiPre<{ accessToken: string }>(id, `/api/preinscripcion/${id}/otp/reenviar`, { method: "POST" }).then((r) =>
+                          rememberToken(id, r.accessToken)
+                        ),
+                      "Te enviamos un código nuevo y un enlace personal actualizado"
+                    )
+                  }
                 >
                   Reenviar código
                 </Button>

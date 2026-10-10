@@ -4,6 +4,7 @@ import {
   preinscripciones,
   preinscripcionDocumentos,
   preinscripcionEventos,
+  preinscripcionPagos,
   type InsertPreinscripcion,
   type KycReviewInput,
   type Preinscripcion,
@@ -12,10 +13,11 @@ import {
   PREINSCRIPCION_TERMINOS_VERSION,
 } from "@shared/schema";
 import { isValidRut, normalizeRut, isCompanyRut, formatRut, maskRut } from "@shared/rut";
-import { and, desc, eq, ne } from "drizzle-orm";
+import fs from "fs";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { createPayment, getPaymentStatus, isFlowConfigured } from "./flow";
 import { sendMail } from "./mailer";
-import { saveDocument } from "./documentStore";
+import { saveDocument, resolveStoredPath } from "./documentStore";
 import {
   PREINSCRIPCION_FEE_CLP,
   addMonths,
@@ -64,6 +66,7 @@ export const DOCUMENTO_LABEL: Record<DocumentoTipo, string> = {
 const OTP_TTL_MS = 10 * 60 * 1000;
 const OTP_RESEND_MS = 60 * 1000;
 const OTP_MAX_INTENTOS = 5;
+const MAX_VERSIONES_POR_TIPO = 3;
 
 function httpError(status: number, message: string) {
   return Object.assign(new Error(message), { status });
@@ -239,7 +242,13 @@ export async function reenviarOtp(id: number) {
     const enviadoAt = p.emailOtpExpiresAt.getTime() - OTP_TTL_MS;
     if (Date.now() - enviadoAt < OTP_RESEND_MS) throw httpError(429, "Espera un minuto antes de pedir otro código");
   }
-  await enviarOtp(p);
+  // Se renueva el enlace personal y viaja en el mismo correo: si el primer envío falló, el
+  // postulante igual recibe una forma de retomar desde otro dispositivo.
+  const accessToken = crypto.randomBytes(32).toString("base64url");
+  await update(p.id, { accessTokenHash: hashAccessToken(accessToken) });
+  await logEvento(p.id, "enlace_renovado");
+  await enviarOtp(p, accessToken);
+  return { accessToken };
 }
 
 export async function verificarOtp(id: number, codigo: string, ip: string) {
@@ -269,6 +278,20 @@ export async function agregarDocumento(id: number, tipo: DocumentoTipo, file: { 
   if (!["borrador", "observado"].includes(p.kycStatus)) {
     throw httpError(409, "Los documentos ya están en revisión; no se pueden modificar ahora");
   }
+  if (!p.emailVerificadoAt) throw httpError(400, "Primero verifica tu correo");
+
+  const previos = (await listDocumentos(id)).filter((d) => d.tipo === tipo);
+  if (p.kycStatus === "borrador") {
+    // Aún nadie los revisó: reemplazar elimina la versión anterior (el disco ocupado queda acotado).
+    for (const d of previos) {
+      await fs.promises.unlink(resolveStoredPath(d.storagePath)).catch(() => undefined);
+      await db.delete(preinscripcionDocumentos).where(eq(preinscripcionDocumentos.id, d.id));
+    }
+  } else if (previos.length >= MAX_VERSIONES_POR_TIPO) {
+    // En observación se conserva lo que el revisor ya vio, con un tope de versiones por tipo.
+    throw httpError(429, "Alcanzaste el máximo de versiones para este documento. Escríbenos a soporte@sicr3p.cl");
+  }
+
   const saved = await saveDocument(id, file.buffer);
   const [doc] = await db
     .insert(preinscripcionDocumentos)
@@ -312,6 +335,12 @@ export async function iniciarPago(id: number, urls: { urlConfirmation: string; u
     throw httpError(503, "El pago en línea aún no está habilitado. Te avisaremos por correo cuando puedas pagar.");
   }
 
+  // Si hay una orden abierta, primero se consulta a Flow: puede haberse pagado ya.
+  if (p.paymentStatus === "en_proceso" && p.flowToken) {
+    const actual = await confirmarPagoPorToken(p.flowToken);
+    if (actual.paymentStatus === "pagado") throw httpError(409, "Esta preinscripción ya está pagada");
+  }
+
   const commerceOrder = `pr-pre-${p.id}-${Date.now()}`;
   const payment = await createPayment({
     commerceOrder,
@@ -320,6 +349,12 @@ export async function iniciarPago(id: number, urls: { urlConfirmation: string; u
     email: p.email,
     urlConfirmation: urls.urlConfirmation,
     urlReturn: urls.urlReturn,
+  });
+  await db.insert(preinscripcionPagos).values({
+    preinscripcionId: id,
+    commerceOrder,
+    flowToken: payment.token,
+    flowOrder: payment.flowOrder,
   });
   await update(id, {
     paymentStatus: "en_proceso",
@@ -338,41 +373,70 @@ const FLOW_MAP: Record<number, "en_proceso" | "pagado" | "rechazado" | "anulado"
   4: "anulado",
 };
 
-/** Llamado por el webhook de Flow y por el retorno del usuario: siempre consulta a Flow. */
+/**
+ * Llamado por el webhook de Flow y por el retorno del usuario: siempre consulta a Flow.
+ * Reconoce cualquier intento de pago de la preinscripción, no solo el último.
+ */
 export async function confirmarPagoPorToken(token: string): Promise<Preinscripcion> {
-  const [p] = await db.select().from(preinscripciones).where(eq(preinscripciones.flowToken, token));
-  if (!p) throw httpError(404, "Preinscripción no encontrada para este pago");
-  if (p.paymentStatus === "pagado") return p;
+  const [intento] = await db.select().from(preinscripcionPagos).where(eq(preinscripcionPagos.flowToken, token));
+  if (!intento) throw httpError(404, "Pago no encontrado");
+  const p = (await getById(intento.preinscripcionId))!;
+  if (intento.status === "pagado") return p;
 
   const status = await getPaymentStatus(token);
   const raw = status.raw as { amount?: number | string; commerceOrder?: string };
-  const paymentStatus = FLOW_MAP[status.status] ?? "en_proceso";
+  const estado = FLOW_MAP[status.status] ?? "en_proceso";
 
-  if (paymentStatus === "pagado") {
+  if (estado === "pagado") {
     // Defensa adicional: el pago confirmado debe ser de esta orden y por el monto exacto.
-    if (String(raw.commerceOrder) !== p.flowCommerceOrder || Math.round(Number(raw.amount)) !== PREINSCRIPCION_FEE_CLP) {
+    if (String(raw.commerceOrder) !== intento.commerceOrder || Math.round(Number(raw.amount)) !== PREINSCRIPCION_FEE_CLP) {
       await logEvento(p.id, "pago_inconsistente", JSON.stringify(status.raw));
       throw httpError(409, "El pago informado por Flow no coincide con la orden");
     }
   }
 
-  let updated = await update(p.id, {
-    paymentStatus,
-    flowRawStatus: JSON.stringify(status.raw),
-    paidAt: paymentStatus === "pagado" ? new Date() : p.paidAt,
-    kycStatus: paymentStatus === "pagado" && p.kycStatus === "borrador" ? "pendiente_revision" : p.kycStatus,
-  });
-  await logEvento(p.id, `pago_${paymentStatus}`, `Flow orden ${status.flowOrder}`);
+  await db
+    .update(preinscripcionPagos)
+    .set({ status: estado, rawStatus: JSON.stringify(status.raw), updatedAt: new Date() })
+    .where(eq(preinscripcionPagos.id, intento.id));
+  await logEvento(p.id, `pago_${estado}`, `Flow orden ${status.flowOrder} · ${intento.commerceOrder}`);
 
-  if (paymentStatus === "pagado") {
-    await sendMail({
-      to: updated.email,
-      subject: `Pago recibido — preinscripción ${updated.folio}`,
-      text: `Hola ${updated.repNombre},\n\nRecibimos el pago de $20.000 de la preinscripción ${updated.folio} (${updated.razonSocial}).\n\nAhora revisamos tus antecedentes. Cuando la verificación esté aprobada te enviaremos tu tarjeta de membresía para Apple Wallet y Google Wallet.\n\nProveedor Regional · soporte@sicr3p.cl`,
-    }).catch((e) => console.error("[preinscripción] correo de pago no enviado:", e.message));
-    updated = await intentarEmitirTarjeta(updated);
+  if (estado !== "pagado") {
+    // Solo el intento vigente define el estado visible; uno antiguo rechazado no lo pisa.
+    if (p.flowToken === token && p.paymentStatus !== "pagado") {
+      return update(p.id, { paymentStatus: estado, flowRawStatus: JSON.stringify(status.raw) });
+    }
+    return p;
   }
-  return updated;
+
+  // Pago confirmado: se acredita una sola vez (actualización condicional).
+  const [acreditada] = await db
+    .update(preinscripciones)
+    .set({
+      paymentStatus: "pagado",
+      flowToken: token,
+      flowCommerceOrder: intento.commerceOrder,
+      flowFlowOrder: String(status.flowOrder),
+      flowRawStatus: JSON.stringify(status.raw),
+      paidAt: new Date(),
+      kycStatus: p.kycStatus === "borrador" ? "pendiente_revision" : p.kycStatus,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(preinscripciones.id, p.id), ne(preinscripciones.paymentStatus, "pagado")))
+    .returning();
+
+  if (!acreditada) {
+    // Ya estaba pagada por otra orden: este segundo cobro debe devolverse.
+    await logEvento(p.id, "pago_duplicado", `Orden ${intento.commerceOrder} pagada además de la acreditada: requiere devolución`);
+    return (await getById(p.id))!;
+  }
+
+  await sendMail({
+    to: acreditada.email,
+    subject: `Pago recibido — preinscripción ${acreditada.folio}`,
+    text: `Hola ${acreditada.repNombre},\n\nRecibimos el pago de $20.000 de la preinscripción ${acreditada.folio} (${acreditada.razonSocial}).\n\nAhora revisamos tus antecedentes. Cuando la verificación esté aprobada te enviaremos tu tarjeta de membresía para Apple Wallet y Google Wallet.\n\nProveedor Regional · soporte@sicr3p.cl`,
+  }).catch((e) => console.error("[preinscripción] correo de pago no enviado:", e.message));
+  return intentarEmitirTarjeta(acreditada);
 }
 
 // --- Revisión KYC (admin) ---
@@ -386,12 +450,13 @@ export async function revisarKyc(id: number, input: KycReviewInput, adminUserId:
   if (input.decision !== "aprobado" && input.nota.length < 5) {
     throw httpError(400, "Explica al postulante qué debe corregir o por qué se rechaza");
   }
-  let updated = await update(id, {
-    kycStatus: input.decision,
-    kycNota: input.nota,
-    kycRevisadoPor: adminUserId,
-    kycRevisadoAt: new Date(),
-  });
+  // Condicional: si dos revisores deciden a la vez, solo una decisión se aplica.
+  let [updated] = await db
+    .update(preinscripciones)
+    .set({ kycStatus: input.decision, kycNota: input.nota, kycRevisadoPor: adminUserId, kycRevisadoAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(preinscripciones.id, id), inArray(preinscripciones.kycStatus, ["pendiente_revision", "observado"])))
+    .returning();
+  if (!updated) throw httpError(409, "Otra persona ya resolvió esta preinscripción; recarga para ver su estado");
   await logEvento(id, `kyc_${input.decision}`, input.nota, { actorUserId: adminUserId, ip });
 
   if (input.decision === "aprobado") {
@@ -417,13 +482,27 @@ async function intentarEmitirTarjeta(p: Preinscripcion): Promise<Preinscripcion>
     const memberCode = newMemberCode();
     const ahora = new Date();
     try {
-      const updated = await update(p.id, {
-        cardStatus: "vigente",
-        memberCode,
-        cardSerial: newCardSerial(),
-        cardEmitidaAt: ahora,
-        cardValidaHasta: addMonths(ahora, vigenciaMeses()),
-      });
+      // Se reclama la emisión con una actualización condicional: nunca se emiten dos códigos.
+      const [updated] = await db
+        .update(preinscripciones)
+        .set({
+          cardStatus: "vigente",
+          memberCode,
+          cardSerial: newCardSerial(),
+          cardEmitidaAt: ahora,
+          cardValidaHasta: addMonths(ahora, vigenciaMeses()),
+          updatedAt: ahora,
+        })
+        .where(
+          and(
+            eq(preinscripciones.id, p.id),
+            eq(preinscripciones.cardStatus, "no_emitida"),
+            eq(preinscripciones.paymentStatus, "pagado"),
+            eq(preinscripciones.kycStatus, "aprobado")
+          )
+        )
+        .returning();
+      if (!updated) return (await getById(p.id))!;
       await logEvento(p.id, "tarjeta_emitida", memberCode);
       await sendMail({
         to: updated.email,

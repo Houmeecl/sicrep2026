@@ -9,6 +9,8 @@ import {
   timestamp,
   pgEnum,
   uniqueIndex,
+  index,
+  json,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
@@ -79,6 +81,20 @@ export const founderStatusEnum = pgEnum("founder_status", [
   "confirmado",
   "rechazado",
 ]);
+
+// --- Sesiones (tabla de connect-pg-simple) ---
+// Se declara aquí para que `drizzle-kit push` la reconozca: sin esto, cada tabla nueva hace que
+// push pregunte de forma interactiva si es "session" renombrada, y el despliegue queda colgado.
+
+export const sessionTable = pgTable(
+  "session",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: json("sess").notNull(),
+    expire: timestamp("expire", { precision: 6 }).notNull(),
+  },
+  (t) => ({ expireIdx: index("IDX_session_expire").on(t.expire) })
+);
 
 // --- Usuarios y cuentas ---
 
@@ -409,6 +425,20 @@ export const preinscripcionDocumentos = pgTable("preinscripcion_documentos", {
   sha256: varchar("sha256", { length: 64 }).notNull(),
   storagePath: text("storage_path").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Cada intento de pago en Flow queda registrado: si el postulante reintenta, la orden anterior
+// sigue siendo reconocible y un pago tardío sobre ella se acredita (o se marca para devolución).
+export const preinscripcionPagos = pgTable("preinscripcion_pagos", {
+  id: serial("id").primaryKey(),
+  preinscripcionId: integer("preinscripcion_id").notNull().references(() => preinscripciones.id),
+  commerceOrder: varchar("commerce_order", { length: 64 }).notNull().unique(),
+  flowToken: varchar("flow_token", { length: 128 }).notNull().unique(),
+  flowOrder: varchar("flow_order", { length: 64 }),
+  status: paymentStatusEnum("status").notNull().default("en_proceso"),
+  rawStatus: text("raw_status"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 export const preinscripcionEventos = pgTable("preinscripcion_eventos", {
