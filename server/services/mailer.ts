@@ -1,4 +1,5 @@
 import nodemailer, { type Transporter } from "nodemailer";
+import { isDevMode } from "../devMode";
 
 /**
  * Envío de correos transaccionales (código de verificación, enlace de seguimiento, tarjeta).
@@ -47,7 +48,7 @@ export interface MailInput {
 
 export async function sendMail(input: MailInput): Promise<void> {
   if (!isMailerConfigured()) {
-    if (process.env.NODE_ENV === "production") {
+    if (!isDevMode()) {
       throw Object.assign(new Error("El envío de correos no está configurado (SMTP_HOST/MAIL_FROM)"), { status: 503 });
     }
     console.log(`\n[correo DEV — no enviado] Para: ${input.to}\nAsunto: ${input.subject}\n${input.text}\n`);

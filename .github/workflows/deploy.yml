@@ -50,6 +50,7 @@ jobs:
             cat > .env <<'EOF'
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            NODE_ENV=production
             PORT=5000
             FLOW_API_KEY=${{ secrets.FLOW_API_KEY }}
             FLOW_SECRET_KEY=${{ secrets.FLOW_SECRET_KEY }}

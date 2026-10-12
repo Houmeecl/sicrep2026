@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import QRCode from "qrcode";
+import { isDevMode } from "../devMode";
 
 /**
  * Identidad de la tarjeta de membresía: código de socio, firma y URL de verificación.
@@ -21,7 +22,7 @@ export function vigenciaMeses(): number {
 function signingSecret(): string {
   const s = process.env.CARD_SIGNING_SECRET;
   if (s && s.length >= 32) return s;
-  if (process.env.NODE_ENV === "production") {
+  if (!isDevMode()) {
     throw Object.assign(new Error("CARD_SIGNING_SECRET no configurado (mínimo 32 caracteres)"), { status: 503 });
   }
   return "dev-only-card-signing-secret-no-usar-en-produccion";

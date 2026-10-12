@@ -18,7 +18,9 @@ import { isFlowConfigured } from "./services/flow";
 
 declare module "express-session" {
   interface SessionData {
-    preinscripcionIds?: number[];
+    // id → hash del enlace personal vigente al momento de autorizar. Si el enlace se renueva,
+    // el permiso guardado deja de calzar y la sesión pierde acceso.
+    preinscripcionGrants?: Record<string, string>;
   }
 }
 
@@ -58,13 +60,13 @@ async function loadOwned(req: Request) {
   if (!Number.isInteger(id)) throw Object.assign(new Error("Id inválido"), { status: 400 });
   const p = await svc.getById(id);
   if (!p) throw Object.assign(new Error("Preinscripción no encontrada"), { status: 404 });
-  const enSesion = req.session.preinscripcionIds?.includes(id);
+  const enSesion = req.session.preinscripcionGrants?.[id] === p.accessTokenHash;
   const token = (req.get("x-access-token") ?? (req.query.t as string | undefined)) || undefined;
   if (!enSesion && !svc.checkAccessToken(p, token)) {
     throw Object.assign(new Error("No autorizado para ver esta preinscripción"), { status: 403 });
   }
   if (!enSesion) {
-    req.session.preinscripcionIds = [...(req.session.preinscripcionIds ?? []), id];
+    grant(req, id, p.accessTokenHash);
   }
   return p;
 }
@@ -77,6 +79,10 @@ function requireOwned(req: Request, res: Response, next: NextFunction) {
       next();
     })
     .catch(next);
+}
+
+function grant(req: Request, id: number, accessTokenHash: string) {
+  req.session.preinscripcionGrants = { ...(req.session.preinscripcionGrants ?? {}), [id]: accessTokenHash };
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -107,7 +113,7 @@ export function registerPreinscripcionRoutes(app: Express) {
       const parsed = insertPreinscripcionSchema.safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ message: "Revisa los datos del formulario", errors: parsed.error.flatten() });
       const result = await svc.crear(parsed.data, { ip: ip(req), userAgent: req.get("user-agent") ?? "" });
-      req.session.preinscripcionIds = [...(req.session.preinscripcionIds ?? []), result.preinscripcion.id];
+      grant(req, result.preinscripcion.id, result.preinscripcion.accessTokenHash);
       res.status(201).json({
         id: result.preinscripcion.id,
         folio: result.preinscripcion.folio,
@@ -131,6 +137,8 @@ export function registerPreinscripcionRoutes(app: Express) {
     wrap(async (req, res) => {
       const p = await loadOwned(req);
       const { accessToken } = await svc.reenviarOtp(p.id);
+      // Quien renueva el enlace conserva el acceso; cualquier otra sesión previa lo pierde.
+      grant(req, p.id, svc.hashAccessToken(accessToken));
       res.json({ accessToken });
     })
   );

@@ -16,6 +16,7 @@ import { isValidRut, normalizeRut, isCompanyRut, formatRut, maskRut } from "@sha
 import fs from "fs";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import { createPayment, getPaymentStatus, isFlowConfigured } from "./flow";
+import { isDevMode } from "../devMode";
 import { sendMail } from "./mailer";
 import { saveDocument, resolveStoredPath } from "./documentStore";
 import {
@@ -74,8 +75,9 @@ function httpError(status: number, message: string) {
 
 function otpSecret(): string {
   const s = process.env.SESSION_SECRET;
-  if (!s && process.env.NODE_ENV === "production") throw httpError(503, "SESSION_SECRET no configurado");
-  return s ?? "proveedor-regional-dev-secret";
+  if (s && s.length >= 32) return s;
+  if (!isDevMode()) throw httpError(503, "SESSION_SECRET no configurado (mínimo 32 caracteres)");
+  return s || "proveedor-regional-dev-secret";
 }
 
 const sha256 = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
