@@ -19,14 +19,23 @@ export function isMailerConfigured(): boolean {
 function getTransporter(): Transporter {
   if (!transporter) {
     const port = Number(process.env.SMTP_PORT || 587);
+    // 465 = SSL directo; 587 = STARTTLS. SMTP_SECURE permite forzarlo si el proveedor usa otra combinación.
+    const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port,
-      secure: port === 465,
+      secure,
+      requireTLS: !secure,
       auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
     });
   }
   return transporter;
+}
+
+/** Comprueba conexión y credenciales con el servidor SMTP (lo usa `npm run mail:test`). */
+export async function verifyMailer(): Promise<void> {
+  if (!isMailerConfigured()) throw new Error("Falta SMTP_HOST o MAIL_FROM");
+  await getTransporter().verify();
 }
 
 export interface MailInput {

@@ -10,7 +10,8 @@
     "check": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx server/seed.ts",
-    "admin:create": "tsx server/scripts/create-admin.ts"
+    "admin:create": "tsx server/scripts/create-admin.ts",
+    "mail:test": "tsx server/scripts/mail-test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

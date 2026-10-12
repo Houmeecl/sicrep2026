@@ -130,6 +130,22 @@ no se edita: los cambios van en una versión nueva.
 Pendiente de confirmar por negocio: vigencia de la tarjeta (`PREINSCRIPCION_VIGENCIA_MESES`, por defecto 12) y plazo
 de devolución si un KYC se rechaza después del pago (los segundos cobros quedan marcados `pago_duplicado`).
 
+## Servidor de correo (soporte@sicr3p.cl)
+
+El dominio `sicr3p.cl` usa los DNS de DonWeb y su correo está en `mail.sicr3p.cl`. El sistema envía por SMTP
+con la cuenta `soporte@sicr3p.cl`:
+
+1. En el panel de DonWeb crear la casilla `soporte@sicr3p.cl` (si no existe) y anotar su contraseña.
+2. En GitHub → Settings → Secrets → Actions:
+   `SMTP_HOST=mail.sicr3p.cl`, `SMTP_PORT=465`, `SMTP_USER=soporte@sicr3p.cl`, `SMTP_PASS=…`,
+   `MAIL_FROM=Proveedor Regional <soporte@sicr3p.cl>` (si 465 no conecta, probar `SMTP_PORT=587`).
+3. En la zona DNS de DonWeb, para que los correos no caigan en spam:
+   - **SPF** (TXT en `sicr3p.cl`): `v=spf1 mx a ~all` (agregar `include:` del proveedor si se envía desde otro servicio).
+   - **DKIM**: activarlo en el panel de correo de DonWeb y publicar el registro TXT que entrega.
+   - **DMARC** (TXT en `_dmarc.sicr3p.cl`): `v=DMARC1; p=none; rua=mailto:soporte@sicr3p.cl` para empezar a monitorear.
+4. Probar desde el servidor: `npm run mail:test -- tu-correo@dominio.cl`. Verifica conexión y credenciales y envía un
+   correo de prueba; revisar que llegue a la bandeja de entrada y no a spam.
+
 ## Publicar en GitHub
 
 Este proyecto se generó como repositorio git local. Para subirlo:
