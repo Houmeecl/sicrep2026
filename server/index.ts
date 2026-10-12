@@ -8,6 +8,12 @@ import { setupVite, serveStatic } from "./vite";
 import { pool } from "./db";
 
 const app = express();
+// Detrás de un proxy en el mismo servidor (nginx), para que req.ip sea la IP real del cliente.
+// Solo se cree a X-Forwarded-For cuando la conexión viene de loopback: si el puerto de Node queda
+// expuesto a Internet, un cliente directo no puede inventar su IP con esa cabecera.
+if (process.env.TRUST_PROXY && process.env.TRUST_PROXY !== "0" && process.env.TRUST_PROXY !== "false") {
+  app.set("trust proxy", "loopback");
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

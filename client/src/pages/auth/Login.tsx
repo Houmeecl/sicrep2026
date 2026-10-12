@@ -12,7 +12,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) navigate(user.role === "company_admin" ? "/empresa" : "/app");
+    if (user) navigate(user.role === "company_admin" ? "/empresa" : user.role === "admin" ? "/admin/preinscripciones" : "/app");
   }, [user, navigate]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

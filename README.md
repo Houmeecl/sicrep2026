@@ -83,6 +83,69 @@ de Atacama, María Elena) y pago real vía **Flow** (`server/services/flow.ts`).
   valor provisional para poder probar el flujo — confirmar el monto real del negocio
   antes de operar en producción.
 
+## Preinscripción con KYC, pago de $20.000 y tarjeta en wallet (`/preinscripcion`)
+
+Flujo del postulante: **datos y declaraciones → código por correo → documentos → pago Flow $20.000 →
+revisión KYC → tarjeta de membresía en Apple Wallet / Google Wallet**. Se puede retomar en cualquier
+momento con el enlace personal que llega por correo (`/preinscripcion/estado?id=…&t=…`).
+
+| Ruta | Para quién |
+|---|---|
+| `/preinscripcion` | Formulario: contribuyente, representante, PEP, beneficiarios finales, consentimientos |
+| `/preinscripcion/estado` | Avance, código de correo, carga de documentos, pago, tarjeta y botones wallet |
+| `/verificar/:codigo?s=…` | Página pública que abre el QR de la tarjeta: vigente / vencida / revocada / no auténtica |
+| `/admin/preinscripciones` | Revisión KYC (rol `admin`): documentos, PEP, beneficiarios, bitácora, aprobar/observar/rechazar, revocar |
+
+Qué se verifica (código en `server/services/preinscripcion.ts`):
+
+- **Automático:** dígito verificador de todos los RUT; coherencia persona jurídica/natural; correo por código
+  (HMAC, 10 min, 5 intentos); tipo real de cada archivo (PDF/JPG/PNG por firma binaria) y SHA-256; un solo
+  registro activo por RUT (índice único parcial); pago consultado a Flow con la API firmada, validando orden y
+  monto exacto; límites por IP en creación y códigos.
+- **Manual (admin):** cédula vigente y del representante, inicio de actividades ante el SII, poderes,
+  declaración PEP y beneficiarios finales (≥10%). La existencia de la empresa en el SII **no** se consulta
+  automáticamente: el SII no ofrece una API pública para eso; se acredita con el documento adjunto.
+- **Emisión:** la tarjeta solo se emite con **pago confirmado + KYC aprobado**. El QR lleva una firma HMAC
+  (`CARD_SIGNING_SECRET`) y la verificación lee el estado vivo en la base: una tarjeta revocada o vencida
+  deja de validar de inmediato, aunque el pase siga guardado en el teléfono.
+- **Auditoría:** toda acción queda en `preinscripcion_eventos` (append-only) con IP; los documentos se guardan
+  fuera de la carpeta pública (`UPLOAD_DIR`) con permisos 600.
+
+Puesta en marcha:
+
+1. Variables: ver `.env.example` (Flow, SMTP, `CARD_SIGNING_SECRET`, Apple y Google Wallet).
+   Sin Apple/Google configurados, la tarjeta funciona con su QR y los botones wallet no se muestran.
+   Sin SMTP en producción no se pueden enviar códigos (no se omite la verificación de correo).
+2. `npm run db:push` para crear las tablas nuevas.
+3. Crear un revisor: `ADMIN_PASSWORD="…" npm run admin:create -- revisor@sicr3p.cl "Nombre Apellido"`.
+4. **Apple Wallet:** en developer.apple.com crear un *Pass Type ID*, generar su certificado, exportar
+   certificado y clave a PEM y descargar el intermedio *Apple WWDR G4*. **Google Wallet:** en
+   pay.google.com/business/console activar Google Wallet API, crear una cuenta de servicio con acceso al emisor
+   y guardar su clave privada en PEM.
+
+Términos y condiciones: `shared/terminos.ts`, publicados en `/preinscripcion/terminos/2026-10` y enlazados desde el
+formulario; cada consentimiento guarda la versión aceptada. **Revisión legal antes de operar.** Una versión publicada
+no se edita: los cambios van en una versión nueva.
+
+Pendiente de confirmar por negocio: vigencia de la tarjeta (`PREINSCRIPCION_VIGENCIA_MESES`, por defecto 12) y plazo
+de devolución si un KYC se rechaza después del pago (los segundos cobros quedan marcados `pago_duplicado`).
+
+## Servidor de correo (soporte@sicr3p.cl)
+
+El dominio `sicr3p.cl` usa los DNS de DonWeb y su correo está en `mail.sicr3p.cl`. El sistema envía por SMTP
+con la cuenta `soporte@sicr3p.cl`:
+
+1. En el panel de DonWeb crear la casilla `soporte@sicr3p.cl` (si no existe) y anotar su contraseña.
+2. En GitHub → Settings → Secrets → Actions:
+   `SMTP_HOST=mail.sicr3p.cl`, `SMTP_PORT=465`, `SMTP_USER=soporte@sicr3p.cl`, `SMTP_PASS=…`,
+   `MAIL_FROM=Proveedor Regional <soporte@sicr3p.cl>` (si 465 no conecta, probar `SMTP_PORT=587`).
+3. En la zona DNS de DonWeb, para que los correos no caigan en spam:
+   - **SPF** (TXT en `sicr3p.cl`): `v=spf1 mx a ~all` (agregar `include:` del proveedor si se envía desde otro servicio).
+   - **DKIM**: activarlo en el panel de correo de DonWeb y publicar el registro TXT que entrega.
+   - **DMARC** (TXT en `_dmarc.sicr3p.cl`): `v=DMARC1; p=none; rua=mailto:soporte@sicr3p.cl` para empezar a monitorear.
+4. Probar desde el servidor: `npm run mail:test -- tu-correo@dominio.cl`. Verifica conexión y credenciales y envía un
+   correo de prueba; revisar que llegue a la bandeja de entrada y no a spam.
+
 ## Publicar en GitHub
 
 Este proyecto se generó como repositorio git local. Para subirlo:

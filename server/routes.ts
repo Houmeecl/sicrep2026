@@ -17,6 +17,7 @@ import {
 } from "@shared/schema";
 import { suggestDemoPoints, DEMO_POINTS_RULE_LABEL } from "./services/points";
 import { isFlowConfigured } from "./services/flow";
+import { registerPreinscripcionRoutes } from "./routes-preinscripcion";
 
 declare module "express-session" {
   interface SessionData {
@@ -42,6 +43,8 @@ function requireRole(role: string) {
 }
 
 export function registerRoutes(app: Express) {
+  registerPreinscripcionRoutes(app);
+
   // --- Postulación (pública) ---
   app.post("/api/applications", async (req, res) => {
     const parsed = insertApplicationSchema.safeParse(req.body);

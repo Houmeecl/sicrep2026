@@ -9,12 +9,14 @@ import crypto from "crypto";
  *
  * FLOW_ENV=sandbox (por defecto) usa https://sandbox.flow.cl/api; FLOW_ENV=production usa
  * https://www.flow.cl/api. Cambiar a producción es una decisión explícita del usuario.
+ * FLOW_API_URL (opcional) reemplaza la URL base; se usa solo para pruebas automatizadas.
  */
 
 const FLOW_API_KEY = process.env.FLOW_API_KEY;
 const FLOW_SECRET_KEY = process.env.FLOW_SECRET_KEY;
 const FLOW_BASE_URL =
-  process.env.FLOW_ENV === "production" ? "https://www.flow.cl/api" : "https://sandbox.flow.cl/api";
+  process.env.FLOW_API_URL ??
+  (process.env.FLOW_ENV === "production" ? "https://www.flow.cl/api" : "https://sandbox.flow.cl/api");
 
 export function isFlowConfigured(): boolean {
   return Boolean(FLOW_API_KEY && FLOW_SECRET_KEY);
