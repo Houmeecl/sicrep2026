@@ -8,6 +8,7 @@ export const ESTADOS = {
   planificacion: ['Planificación', 'neutro'],
   en_curso: ['En curso', 'exito'],
   finalizado: ['Finalizado', 'cobre'],
+  cerrado: ['Cerrado · informe emitido', 'oscuro'],
 };
 
 function FormularioNuevo({ alCancelar }) {

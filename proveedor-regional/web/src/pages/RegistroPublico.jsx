@@ -12,6 +12,7 @@ const INICIAL = {
   perfil: '',
   origen: '',
   modo: '',
+  modo_local: '',
   ocupantes: 1,
   noches: 0,
   consentimiento: false,
@@ -43,6 +44,7 @@ export default function RegistroPublico() {
         ...form,
         ocupantes: Number(form.ocupantes),
         noches: Number(form.noches),
+        modo_local: form.modo === 'avion' && form.modo_local ? form.modo_local : null,
       });
       setListo(r.actualizado ? 'actualizado' : 'nuevo');
       window.scrollTo({ top: 0 });
@@ -127,9 +129,13 @@ export default function RegistroPublico() {
               <legend className="float-left mb-1 font-display text-lg font-bold">Tu traslado al evento</legend>
               <Campo id="origen" etiqueta="¿Desde dónde viajas?" error={errorDe('origen')}>
                 <select id="origen" className="campo" value={form.origen} onChange={cambiar('origen')} required>
-                  <option value="">Elige tu ciudad o región</option>
-                  {opciones.origenes.map((o) => (
-                    <option key={o.id} value={o.id}>{o.nombre}</option>
+                  <option value="">Elige tu ciudad</option>
+                  {opciones.origenes.map((g) => (
+                    <optgroup key={g.grupo} label={g.grupo}>
+                      {g.ciudades.map((o) => (
+                        <option key={o.id} value={o.id}>{o.nombre}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </Campo>
@@ -151,6 +157,17 @@ export default function RegistroPublico() {
                 </div>
                 {errorDe('modo') && <p className="mt-1 text-sm font-semibold text-red-700">{errorDe('modo')}</p>}
               </div>
+
+              {form.modo === 'avion' && (
+                <Campo id="modo_local" etiqueta="¿Cómo te trasladas entre el aeropuerto y el evento?">
+                  <select id="modo_local" className="campo" value={form.modo_local} onChange={cambiar('modo_local')}>
+                    <option value="">Elige una opción</option>
+                    {opciones.modos_locales.map((m) => (
+                      <option key={m.id} value={m.id}>{m.nombre}</option>
+                    ))}
+                  </select>
+                </Campo>
+              )}
 
               {form.modo === 'auto' && (
                 <Campo id="ocupantes" etiqueta="¿Cuántas personas venían en el auto, contándote?">

@@ -3,6 +3,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   CalendarDays,
+  Lock,
+  LockOpen,
+  ShieldCheck,
   Copy,
   Download,
   ExternalLink,
@@ -80,11 +83,11 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
         />
         <Kpi titulo="Huella total" valor={formato.numero(r.total_tco2e, 2)} unidad="tCO₂e" nota={`${formato.numero(r.tco2e_por_dia, 2)} t por día`} />
         <Kpi
-          titulo="Por asistente"
-          valor={formato.numero(r.kg_por_asistente, 1)}
+          titulo="Por asistente, sin vuelos"
+          valor={formato.numero(r.kg_por_asistente_sin_vuelos, 1)}
           unidad="kgCO₂e"
-          nota={`Meta: máx. ${cr.kg_por_asistente.meta} kg`}
-          tono={tonoCriterio(cr.kg_por_asistente)}
+          nota={`Con vuelos: ${formato.numero(r.kg_por_asistente, 1)} kg · meta máx. ${cr.kg_por_asistente_sin_vuelos.meta} kg`}
+          tono={tonoCriterio(cr.kg_por_asistente_sin_vuelos)}
         />
         <Kpi
           titulo="Reciclaje y compostaje"
@@ -109,6 +112,7 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
                 <div className="flex justify-between gap-3 text-[15px]">
                   <span className="font-semibold">
                     {c.nombre} {c.estimado && <span className="font-normal text-tinta-600">(estimado)</span>}
+                    {c.sin_factor && <span className="font-normal text-tinta-600">(sin factor: defínelo en Configuración)</span>}
                   </span>
                   <span>{formato.numero(c.tco2e, 2)} t · {formato.numero(c.porcentaje)} %</span>
                 </div>
@@ -119,6 +123,10 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
             ))}
           </ul>
           <p className="mt-5 text-sm text-tinta-600">
+            Del transporte, {formato.numero(r.transporte.vuelos_tco2e, 2)} t son vuelos y{' '}
+            {formato.numero(r.transporte.terrestre_tco2e, 2)} t traslados terrestres.
+          </p>
+          <p className="mt-1 text-sm text-tinta-600">
             Emisiones evitadas por reciclaje (informadas aparte): {formato.numero(r.residuos.emisiones_evitadas_tco2e, 2)} tCO₂e.
             Equivale a la absorción anual de unos {formato.numero(r.equivalencias.arboles_un_anio)} árboles.
           </p>
@@ -126,6 +134,7 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
 
         <section className="tarjeta flex flex-col gap-4 p-6">
           <h2 className="text-xl font-bold">QR de registro</h2>
+          {evento.estado === 'cerrado' && <Aviso tipo="info">El registro está cerrado porque el informe ya fue emitido.</Aviso>}
           <img src={`/api/eventos/${evento.id}/qr.png`} alt={`Código QR para registrarse en ${evento.nombre}`} className="mx-auto w-48 rounded-xl border border-navy-900/8" />
           <p className="break-all rounded-lg bg-navy-50 px-3 py-2 text-sm">{urlRegistro}</p>
           <div className="flex flex-wrap gap-2">
@@ -144,10 +153,40 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
 
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="tarjeta p-6">
+          <h2 className="text-xl font-bold">Huella por alcance</h2>
+          <p className="text-sm text-tinta-600">GHG Protocol, desde la perspectiva del organizador.</p>
+          <ul className="mt-3 divide-y divide-navy-900/8">
+            {r.alcances.map((a) => (
+              <li key={a.alcance} className="flex justify-between gap-3 py-3">
+                <span>{a.nombre}</span>
+                <span className="whitespace-nowrap font-bold">{formato.numero(a.tco2e, 2)} t · {formato.numero(a.porcentaje)} %</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="tarjeta p-6">
+          <h2 className="text-xl font-bold">Calidad del dato</h2>
+          <p className="text-sm text-tinta-600">De dónde proviene la huella calculada.</p>
+          <div className="mt-4 flex h-4 overflow-hidden rounded-full bg-navy-50" aria-hidden="true">
+            <div className="bg-navy-700" style={{ width: `${r.calidad.medido_pct}%` }} />
+            <div className="bg-cobre-400" style={{ width: `${r.calidad.extendido_pct}%` }} />
+            <div className="bg-tinta-400" style={{ width: `${r.calidad.estimado_pct}%` }} />
+          </div>
+          <ul className="mt-4 flex flex-col gap-2 text-[15px]">
+            <li className="flex items-center gap-2"><span className="size-3 rounded-sm bg-navy-700" /> Medido o declarado: <strong>{formato.numero(r.calidad.medido_pct)} %</strong></li>
+            <li className="flex items-center gap-2"><span className="size-3 rounded-sm bg-cobre-400" /> Extendido desde respuestas de asistentes: <strong>{formato.numero(r.calidad.extendido_pct)} %</strong></li>
+            <li className="flex items-center gap-2"><span className="size-3 rounded-sm bg-tinta-400" /> Estimado sin medición: <strong>{formato.numero(r.calidad.estimado_pct)} %</strong></li>
+          </ul>
+        </section>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-2">
+        <section className="tarjeta p-6">
           <h2 className="text-xl font-bold">Criterios Evento Verde</h2>
           <ul className="mt-3 divide-y divide-navy-900/8">
             {[
-              [`Huella máx. ${cr.kg_por_asistente.meta} kgCO₂e por asistente`, cr.kg_por_asistente, ' kg'],
+              [`Huella sin vuelos máx. ${cr.kg_por_asistente_sin_vuelos.meta} kgCO₂e por asistente`, cr.kg_por_asistente_sin_vuelos, ' kg'],
               [`Reciclaje y compostaje mín. ${cr.reciclaje_pct.meta} %`, cr.reciclaje_pct, ' %'],
               [`Electricidad renovable mín. ${cr.renovable_pct.meta} %`, cr.renovable_pct, ' %'],
             ].map(([t, c, u]) => (
@@ -166,6 +205,10 @@ function Resumen({ evento, resultado: r, urlRegistro }) {
               <Insignia tono="alerta">Aún no cumple Evento Verde</Insignia>
             )}
           </div>
+          <p className="mt-3 text-sm text-tinta-600">
+            Autoevaluación según KONTAX Events; no es una certificación de tercera parte. El criterio por asistente excluye
+            vuelos, que el organizador no controla.
+          </p>
         </section>
 
         <section className="tarjeta p-6">
@@ -249,6 +292,15 @@ function Captura({ evento, alCambiar }) {
 
   return (
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,420px)_1fr]">
+      {evento.estado === 'cerrado' ? (
+        <div className="tarjeta flex flex-col gap-3 p-6">
+          <h2 className="text-xl font-bold">Datos congelados</h2>
+          <Aviso tipo="info">
+            El evento está cerrado y su informe ya fue emitido. Para corregir datos, un administrador debe reabrirlo; se
+            emitirá un informe nuevo que reemplaza al anterior.
+          </Aviso>
+        </div>
+      ) : (
       <form onSubmit={enviar} className="tarjeta flex flex-col gap-4 p-6">
         <h2 className="text-xl font-bold">Agregar dato</h2>
         {error && <Aviso>{error}</Aviso>}
@@ -285,6 +337,7 @@ function Captura({ evento, alCambiar }) {
           {enviando ? 'Guardando…' : 'Guardar dato'}
         </button>
       </form>
+      )}
 
       <section className="tarjeta overflow-hidden">
         <h2 className="px-6 pt-6 text-xl font-bold">Datos cargados</h2>
@@ -316,9 +369,11 @@ function Captura({ evento, alCambiar }) {
                       <td className="px-3 py-3 text-right font-semibold">{formato.numero(r.cantidad, 1)} {s?.unidad}</td>
                       <td className="px-3 py-3 text-sm text-tinta-600">{formato.fechaHora(r.creado_en)}<br />{r.creado_por}</td>
                       <td className="px-3 py-3 text-right">
-                        <button type="button" onClick={() => eliminar(r.id)} className="rounded-lg p-2 text-tinta-600 hover:bg-red-50 hover:text-red-700" aria-label="Eliminar dato">
-                          <Trash2 className="size-5" />
-                        </button>
+                        {evento.estado !== 'cerrado' && (
+                          <button type="button" onClick={() => eliminar(r.id)} className="rounded-lg p-2 text-tinta-600 hover:bg-red-50 hover:text-red-700" aria-label="Eliminar dato">
+                            <Trash2 className="size-5" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -391,7 +446,7 @@ function Asistentes({ evento, alCambiar }) {
                   <td className="px-6 py-3"><span className="font-semibold">{a.nombre}</span><br /><span className="text-sm text-tinta-600">{a.email}</span></td>
                   <td className="px-3 py-3">{a.organizacion || '—'}</td>
                   <td className="px-3 py-3">{a.perfil}</td>
-                  <td className="px-3 py-3">{NOMBRE_MODO[a.modo]}{a.modo === 'auto' && a.ocupantes > 1 ? ` (${a.ocupantes} pers.)` : ''}</td>
+                  <td className="px-3 py-3">{NOMBRE_MODO[a.modo]}{a.modo === 'auto' && a.ocupantes > 1 ? ` (${a.ocupantes} pers.)` : ''}<br /><span className="text-sm text-tinta-600">desde {a.origen_nombre}</span></td>
                   <td className="px-3 py-3 text-sm text-tinta-600">{formato.fechaHora(a.creado_en)}</td>
                   <td className="px-3 py-3 text-right">
                     <button type="button" onClick={() => eliminar(a)} className="rounded-lg p-2 text-tinta-600 hover:bg-red-50 hover:text-red-700" aria-label={`Eliminar a ${a.nombre}`}>
@@ -408,22 +463,34 @@ function Asistentes({ evento, alCambiar }) {
   );
 }
 
+
 function Configuracion({ evento, alGuardar }) {
   const { usuario } = useSesion();
   const navegar = useNavigate();
+  const cerrado = evento.estado === 'cerrado';
+  const [sedes, setSedes] = useState([]);
   const [f, setF] = useState({
     nombre: evento.nombre,
     ciudad: evento.ciudad,
+    ciudad_base: evento.ciudad_base,
     recinto: evento.recinto || '',
     fecha_inicio: evento.fecha_inicio || '',
     fecha_fin: evento.fecha_fin || '',
     dias: evento.dias,
     asistentes_estimados: evento.asistentes_estimados ?? '',
     asistentes_reales: evento.asistentes_reales ?? '',
-    estado: evento.estado,
+    km_aeropuerto: evento.km_aeropuerto ?? 25,
+    factor_alojamiento_kg_noche: evento.factor_alojamiento_kg_noche ?? '',
+    fuente_factor_alojamiento: evento.fuente_factor_alojamiento || '',
+    estado: cerrado ? 'finalizado' : evento.estado,
     registro_abierto: evento.registro_abierto,
   });
   const [mensaje, setMensaje] = useState(null);
+
+  useEffect(() => {
+    api.get('/eventos/catalogos').then((d) => setSedes(d.sedes));
+  }, []);
+
   const c = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
   const numOrNull = (v) => (v === '' ? null : Number(v));
 
@@ -439,6 +506,9 @@ function Configuracion({ evento, alGuardar }) {
         dias: Number(f.dias),
         asistentes_estimados: numOrNull(f.asistentes_estimados),
         asistentes_reales: numOrNull(f.asistentes_reales),
+        km_aeropuerto: Number(f.km_aeropuerto),
+        factor_alojamiento_kg_noche: numOrNull(f.factor_alojamiento_kg_noche),
+        fuente_factor_alojamiento: f.fuente_factor_alojamiento || null,
       });
       setMensaje({ tipo: 'exito', texto: 'Cambios guardados.' });
       alGuardar();
@@ -447,53 +517,106 @@ function Configuracion({ evento, alGuardar }) {
     }
   }
 
+  async function reabrir() {
+    if (!confirm('¿Reabrir el evento? El informe vigente quedará como reemplazado y al volver a cerrar se emitirá uno nuevo.')) return;
+    try {
+      await api.post(`/eventos/${evento.id}/reabrir`);
+      alGuardar();
+    } catch (err) {
+      setMensaje({ tipo: 'error', texto: err.message });
+    }
+  }
+
   async function eliminarEvento() {
-    if (!confirm(`¿Eliminar "${evento.nombre}" con todos sus asistentes y datos? No se puede deshacer.`)) return;
+    if (!confirm(`¿Eliminar "${evento.nombre}" con todos sus asistentes, datos e informes? No se puede deshacer.`)) return;
     await api.del(`/eventos/${evento.id}`);
     navegar('/app/eventos', { replace: true });
   }
 
   return (
     <div className="flex max-w-3xl flex-col gap-5">
+      {cerrado && (
+        <section className="tarjeta flex flex-wrap items-center justify-between gap-4 p-6">
+          <div>
+            <h2 className="text-lg font-bold">Evento cerrado</h2>
+            <p className="text-[15px] text-tinta-600">
+              La configuración está bloqueada para que el informe emitido no cambie.
+              {usuario.rol !== 'admin' && ' Solo un administrador puede reabrirlo.'}
+            </p>
+          </div>
+          {usuario.rol === 'admin' && (
+            <button type="button" onClick={reabrir} className="boton-secundario">
+              <LockOpen className="size-4" aria-hidden="true" /> Reabrir evento
+            </button>
+          )}
+        </section>
+      )}
+
       <form onSubmit={guardar} className="tarjeta flex flex-col gap-5 p-6">
         {mensaje && <Aviso tipo={mensaje.tipo}>{mensaje.texto}</Aviso>}
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Campo id="c-nombre" etiqueta="Nombre del evento">
-              <input id="c-nombre" className="campo" value={f.nombre} onChange={c('nombre')} />
+        <fieldset disabled={cerrado} className="flex flex-col gap-5 disabled:opacity-70">
+          <legend className="sr-only">Datos del evento</legend>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <Campo id="c-nombre" etiqueta="Nombre del evento">
+                <input id="c-nombre" className="campo" value={f.nombre} onChange={c('nombre')} />
+              </Campo>
+            </div>
+            <Campo id="c-ciudad" etiqueta="Ciudad (como se muestra)"><input id="c-ciudad" className="campo" value={f.ciudad} onChange={c('ciudad')} /></Campo>
+            <Campo id="c-sede" etiqueta="Ciudad sede para calcular distancias">
+              <select id="c-sede" className="campo" value={f.ciudad_base} onChange={c('ciudad_base')}>
+                {sedes.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+              </select>
+            </Campo>
+            <Campo id="c-recinto" etiqueta="Recinto"><input id="c-recinto" className="campo" value={f.recinto} onChange={c('recinto')} /></Campo>
+            <Campo id="c-estado" etiqueta="Estado">
+              <select id="c-estado" className="campo" value={f.estado} onChange={c('estado')}>
+                {Object.entries(ESTADOS).filter(([id]) => id !== 'cerrado').map(([id, [n]]) => <option key={id} value={id}>{n}</option>)}
+              </select>
+            </Campo>
+            <Campo id="c-inicio" etiqueta="Fecha de inicio"><input id="c-inicio" type="date" className="campo" value={f.fecha_inicio} onChange={c('fecha_inicio')} /></Campo>
+            <Campo id="c-fin" etiqueta="Fecha de término"><input id="c-fin" type="date" className="campo" value={f.fecha_fin} onChange={c('fecha_fin')} /></Campo>
+            <Campo id="c-dias" etiqueta="Días de duración"><input id="c-dias" type="number" min="1" className="campo" value={f.dias} onChange={c('dias')} /></Campo>
+            <Campo id="c-estimados" etiqueta="Asistentes esperados">
+              <input id="c-estimados" type="number" min="0" className="campo" value={f.asistentes_estimados} onChange={c('asistentes_estimados')} />
+            </Campo>
+            <Campo id="c-reales" etiqueta="Asistentes reales (control de acceso)" ayuda="Si lo completas, reemplaza a los esperados en el cálculo.">
+              <input id="c-reales" type="number" min="0" className="campo" value={f.asistentes_reales} onChange={c('asistentes_reales')} />
             </Campo>
           </div>
-          <Campo id="c-ciudad" etiqueta="Ciudad"><input id="c-ciudad" className="campo" value={f.ciudad} onChange={c('ciudad')} /></Campo>
-          <Campo id="c-recinto" etiqueta="Recinto"><input id="c-recinto" className="campo" value={f.recinto} onChange={c('recinto')} /></Campo>
-          <Campo id="c-inicio" etiqueta="Fecha de inicio"><input id="c-inicio" type="date" className="campo" value={f.fecha_inicio} onChange={c('fecha_inicio')} /></Campo>
-          <Campo id="c-fin" etiqueta="Fecha de término"><input id="c-fin" type="date" className="campo" value={f.fecha_fin} onChange={c('fecha_fin')} /></Campo>
-          <Campo id="c-dias" etiqueta="Días de duración"><input id="c-dias" type="number" min="1" className="campo" value={f.dias} onChange={c('dias')} /></Campo>
-          <Campo id="c-estado" etiqueta="Estado">
-            <select id="c-estado" className="campo" value={f.estado} onChange={c('estado')}>
-              {Object.entries(ESTADOS).map(([id, [n]]) => <option key={id} value={id}>{n}</option>)}
-            </select>
-          </Campo>
-          <Campo id="c-estimados" etiqueta="Asistentes esperados">
-            <input id="c-estimados" type="number" min="0" className="campo" value={f.asistentes_estimados} onChange={c('asistentes_estimados')} />
-          </Campo>
-          <Campo id="c-reales" etiqueta="Asistentes reales (control de acceso)" ayuda="Si lo completas, reemplaza a los esperados en el cálculo.">
-            <input id="c-reales" type="number" min="0" className="campo" value={f.asistentes_reales} onChange={c('asistentes_reales')} />
-          </Campo>
-        </div>
-        <label className="flex items-center gap-3 font-semibold">
-          <input type="checkbox" className="size-5 accent-navy-700" checked={f.registro_abierto} onChange={c('registro_abierto')} />
-          Registro de asistentes abierto
-        </label>
-        <div>
-          <button type="submit" className="boton-primario">Guardar cambios</button>
-        </div>
+
+          <div className="flex flex-col gap-4 border-t border-navy-900/8 pt-5">
+            <h3 className="text-lg font-bold">Parámetros del cálculo</h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Campo id="c-aeropuerto" etiqueta="Distancia aeropuerto – evento (km, solo ida)" ayuda="Se suma a quienes llegan en avión.">
+                <input id="c-aeropuerto" type="number" min="0" step="any" className="campo" value={f.km_aeropuerto} onChange={c('km_aeropuerto')} />
+              </Campo>
+              <Campo id="c-aloj" etiqueta="Factor de alojamiento (kgCO₂e por noche)" ayuda="Déjalo vacío para no incluir alojamiento.">
+                <input id="c-aloj" type="number" min="0" step="any" className="campo" value={f.factor_alojamiento_kg_noche} onChange={c('factor_alojamiento_kg_noche')} />
+              </Campo>
+              <div className="md:col-span-2">
+                <Campo id="c-fuente" etiqueta="Fuente del factor de alojamiento" ayuda="Obligatoria si ingresas un factor. Queda impresa en el informe.">
+                  <input id="c-fuente" className="campo" value={f.fuente_factor_alojamiento} onChange={c('fuente_factor_alojamiento')} maxLength={300} />
+                </Campo>
+              </div>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-3 font-semibold">
+            <input type="checkbox" className="size-5 accent-navy-700" checked={f.registro_abierto} onChange={c('registro_abierto')} />
+            Registro de asistentes abierto
+          </label>
+          <div>
+            <button type="submit" className="boton-primario">Guardar cambios</button>
+          </div>
+        </fieldset>
       </form>
 
       {usuario.rol === 'admin' && (
         <section className="tarjeta flex flex-wrap items-center justify-between gap-4 border-red-200 p-6">
           <div>
             <h2 className="text-lg font-bold">Eliminar evento</h2>
-            <p className="text-[15px] text-tinta-600">Borra el evento, sus asistentes y todos sus datos.</p>
+            <p className="text-[15px] text-tinta-600">Borra el evento, sus asistentes, sus datos y sus informes.</p>
           </div>
           <button type="button" onClick={eliminarEvento} className="boton border-2 border-red-700 text-red-700 hover:bg-red-50">
             <Trash2 className="size-4" aria-hidden="true" /> Eliminar
@@ -501,6 +624,87 @@ function Configuracion({ evento, alGuardar }) {
         </section>
       )}
     </div>
+  );
+}
+
+function Informes({ evento, informes, alCambiar }) {
+  const [error, setError] = useState('');
+  const [cerrando, setCerrando] = useState(false);
+  const vigente = informes.find((i) => i.estado === 'vigente');
+
+  async function cerrar() {
+    if (
+      !confirm(
+        'Al cerrar el evento se congelan los datos, se cierra el registro de asistentes y se emite un informe numerado. ¿Continuar?',
+      )
+    )
+      return;
+    setError('');
+    setCerrando(true);
+    try {
+      await api.post(`/eventos/${evento.id}/cerrar`);
+      alCambiar();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCerrando(false);
+    }
+  }
+
+  return (
+    <section className="tarjeta flex flex-col gap-4 p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold">Informe</h2>
+          {vigente ? (
+            <p className="text-[15px] text-tinta-600">
+              Informe vigente <strong className="text-navy-900">N° {vigente.numero}</strong>, emitido el{' '}
+              {formato.fechaHora(vigente.emitido_en)} por {vigente.emitido_por || '—'}.
+            </p>
+          ) : (
+            <p className="text-[15px] text-tinta-600">
+              Mientras el evento está abierto puedes descargar un borrador. Al cerrarlo se emite un informe numerado que ya no cambia.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a href={`/api/eventos/${evento.id}/informe.pdf`} className={vigente ? 'boton-accion' : 'boton-secundario'}>
+            <FileText className="size-5" aria-hidden="true" /> {vigente ? 'Descargar informe' : 'Descargar borrador'}
+          </a>
+          {!vigente && (
+            <button type="button" className="boton-accion" onClick={cerrar} disabled={cerrando}>
+              <Lock className="size-5" aria-hidden="true" /> {cerrando ? 'Emitiendo…' : 'Cerrar y emitir informe'}
+            </button>
+          )}
+        </div>
+      </div>
+      {error && <Aviso>{error}</Aviso>}
+      {vigente && (
+        <p className="flex items-start gap-2 break-all rounded-lg bg-navy-50 px-3 py-2 font-mono text-xs text-tinta-600">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0 text-exito-700" aria-hidden="true" />
+          SHA-256: {vigente.hash_sha256}
+        </p>
+      )}
+      {informes.length > (vigente ? 1 : 0) && (
+        <details>
+          <summary className="cursor-pointer font-semibold text-navy-700">Informes anteriores</summary>
+          <ul className="mt-2 divide-y divide-navy-900/8">
+            {informes
+              .filter((i) => i.estado !== 'vigente')
+              .map((i) => (
+                <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-[15px]">
+                  <span>
+                    N° {i.numero} · {formato.fechaHora(i.emitido_en)} <Insignia>Reemplazado</Insignia>
+                  </span>
+                  <a href={`/api/eventos/${evento.id}/informes/${i.id}.pdf`} className="font-semibold text-navy-700 hover:underline">
+                    Descargar
+                  </a>
+                </li>
+              ))}
+          </ul>
+        </details>
+      )}
+    </section>
   );
 }
 
@@ -520,7 +724,7 @@ export default function EventoDetalle() {
 
   if (error) return <Aviso>{error}</Aviso>;
   if (!datos) return <Cargando />;
-  const { evento, resultado, url_registro: urlRegistro } = datos;
+  const { evento, resultado, url_registro: urlRegistro, informes } = datos;
   const [estado, tono] = ESTADOS[evento.estado];
 
   return (
@@ -528,22 +732,19 @@ export default function EventoDetalle() {
       <Link to="/app/eventos" className="flex w-fit items-center gap-1.5 font-semibold text-navy-700 hover:underline">
         <ArrowLeft className="size-4" aria-hidden="true" /> Eventos
       </Link>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap gap-2">
-            <Insignia tono={tono}>{estado}</Insignia>
-            <Insignia>{evento.registro_abierto ? 'Registro abierto' : 'Registro cerrado'}</Insignia>
-          </div>
-          <h1 className="text-3xl font-extrabold">{evento.nombre}</h1>
-          <p className="flex flex-wrap gap-x-5 gap-y-1 text-tinta-600">
-            <span className="flex items-center gap-1.5"><CalendarDays className="size-4" aria-hidden="true" />{formato.fecha(evento.fecha_inicio)}</span>
-            <span className="flex items-center gap-1.5"><MapPin className="size-4" aria-hidden="true" />{evento.ciudad}{evento.recinto ? ` · ${evento.recinto}` : ''}</span>
-          </p>
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Insignia tono={tono}>{estado}</Insignia>
+          <Insignia>{evento.registro_abierto ? 'Registro abierto' : 'Registro cerrado'}</Insignia>
         </div>
-        <a href={`/api/eventos/${evento.id}/informe.pdf`} className="boton-accion">
-          <FileText className="size-5" aria-hidden="true" /> Descargar informe PDF
-        </a>
+        <h1 className="text-3xl font-extrabold">{evento.nombre}</h1>
+        <p className="flex flex-wrap gap-x-5 gap-y-1 text-tinta-600">
+          <span className="flex items-center gap-1.5"><CalendarDays className="size-4" aria-hidden="true" />{formato.fecha(evento.fecha_inicio)}</span>
+          <span className="flex items-center gap-1.5"><MapPin className="size-4" aria-hidden="true" />{evento.ciudad}{evento.recinto ? ` · ${evento.recinto}` : ''}</span>
+        </p>
       </div>
+
+      <Informes key={`${evento.estado}-${informes.length}`} evento={evento} informes={informes} alCambiar={cargar} />
 
       <div role="tablist" aria-label="Secciones del evento" className="flex gap-1 overflow-x-auto border-b border-navy-900/10">
         {PESTANAS.map(([idP, nombre]) => (
@@ -564,9 +765,9 @@ export default function EventoDetalle() {
 
       <div role="tabpanel">
         {pestana === 'resumen' && <Resumen evento={evento} resultado={resultado} urlRegistro={urlRegistro} />}
-        {pestana === 'captura' && <Captura evento={evento} alCambiar={cargar} />}
+        {pestana === 'captura' && <Captura key={evento.estado} evento={evento} alCambiar={cargar} />}
         {pestana === 'asistentes' && <Asistentes evento={evento} alCambiar={cargar} />}
-        {pestana === 'configuracion' && <Configuracion key={evento.id} evento={evento} alGuardar={cargar} />}
+        {pestana === 'configuracion' && <Configuracion key={`${evento.id}-${evento.estado}-${evento.actualizado_en}`} evento={evento} alGuardar={cargar} />}
       </div>
     </div>
   );

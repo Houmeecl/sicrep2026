@@ -73,6 +73,47 @@ const MIGRACIONES = [
       CREATE INDEX registros_por_evento ON registros_operativos (evento_id, categoria);
     `,
   },
+  {
+    id: '002_cierre_y_trazabilidad',
+    sql: `
+      ALTER TABLE eventos
+        ADD COLUMN ciudad_base TEXT NOT NULL DEFAULT 'antofagasta',
+        ADD COLUMN km_aeropuerto NUMERIC(6, 1) NOT NULL DEFAULT 25 CHECK (km_aeropuerto BETWEEN 0 AND 300),
+        ADD COLUMN factor_alojamiento_kg_noche NUMERIC(8, 3) CHECK (factor_alojamiento_kg_noche >= 0),
+        ADD COLUMN fuente_factor_alojamiento TEXT;
+      ALTER TABLE eventos DROP CONSTRAINT eventos_estado_check;
+      ALTER TABLE eventos ADD CONSTRAINT eventos_estado_check
+        CHECK (estado IN ('planificacion', 'en_curso', 'finalizado', 'cerrado'));
+
+      ALTER TABLE asistentes ADD COLUMN modo_local TEXT;
+
+      CREATE SEQUENCE informes_numero_seq;
+      CREATE TABLE informes (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        evento_id UUID NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
+        numero TEXT NOT NULL UNIQUE,
+        estado TEXT NOT NULL DEFAULT 'vigente' CHECK (estado IN ('vigente', 'reemplazado')),
+        metodologia_version TEXT NOT NULL,
+        snapshot JSONB NOT NULL,
+        hash_sha256 TEXT NOT NULL,
+        emitido_por UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+        emitido_en TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX informes_por_evento ON informes (evento_id, emitido_en DESC);
+      CREATE UNIQUE INDEX informe_vigente_por_evento ON informes (evento_id) WHERE estado = 'vigente';
+
+      CREATE TABLE auditoria (
+        id BIGSERIAL PRIMARY KEY,
+        usuario_id UUID REFERENCES usuarios(id) ON DELETE SET NULL,
+        accion TEXT NOT NULL,
+        objeto TEXT,
+        detalle JSONB NOT NULL DEFAULT '{}'::jsonb,
+        ip TEXT,
+        creado_en TIMESTAMPTZ NOT NULL DEFAULT now()
+      );
+      CREATE INDEX auditoria_por_fecha ON auditoria (creado_en DESC);
+    `,
+  },
 ];
 
 export async function migrar() {

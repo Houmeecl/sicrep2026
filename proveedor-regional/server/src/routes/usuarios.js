@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query } from '../db/pool.js';
 import { asincrono, ErrorHttp, validarUuid } from '../lib/http.js';
 import { hashClave, requiereRol } from '../lib/auth.js';
+import { auditar } from '../lib/auditoria.js';
 
 export const rutasUsuarios = Router();
 rutasUsuarios.use(requiereRol('admin'));
@@ -37,6 +38,7 @@ rutasUsuarios.post(
        RETURNING id, email, nombre, rol, activo, creado_en`,
       [d.email, d.nombre, d.rol, await hashClave(d.clave)],
     );
+    await auditar(req, 'usuario.crear', rows[0].id, { email: rows[0].email, rol: rows[0].rol });
     res.status(201).json({ usuario: rows[0] });
   }),
 );
@@ -67,6 +69,8 @@ rutasUsuarios.patch(
       [id, d.nombre ?? null, d.rol ?? null, d.activo ?? null, d.clave ? await hashClave(d.clave) : null],
     );
     if (!rows[0]) throw new ErrorHttp(404, 'Usuario no encontrado.');
+    const { clave, ...cambios } = d;
+    await auditar(req, 'usuario.modificar', id, { ...cambios, clave_restablecida: Boolean(clave) });
     res.json({ usuario: rows[0] });
   }),
 );

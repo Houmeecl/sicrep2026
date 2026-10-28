@@ -85,34 +85,52 @@ npm run dev
 ```
 
 Por defecto la API usa `postgres://postgres:postgres@localhost:5432/proveedor_regional`; cámbialo con
-`DATABASE_URL`. Pruebas del cálculo: `cd server && npm test`.
+`DATABASE_URL`.
+
+Pruebas: `cd server && npm test` ejecuta las del cálculo. Para incluir las de la API, crea una base cuyo nombre
+contenga "test" (se borra en cada ejecución) y ejecuta:
+
+```bash
+createdb pr_test
+TEST_DATABASE_URL=postgres://postgres@localhost/pr_test npm test
+```
+
+GitHub Actions (`.github/workflows/proveedor-regional-ci.yml`) corre las pruebas, compila el frontend, construye la
+imagen Docker y verifica que arranque en cada cambio dentro de `proveedor-regional/`.
 
 ---
 
 ## Cómo se calcula la huella
 
-Archivo: `server/src/lib/calculadora.js` (factores en `server/src/lib/factores.js`).
+Archivos: `server/src/lib/calculadora.js` (cálculo) y `server/src/lib/factores.js` (factores con unidad y fuente).
+Versión de la metodología: `METODOLOGIA.version`; súbela si cambias un factor.
 
 | Categoría | Dato | Cálculo |
 |---|---|---|
-| Transporte | Registro QR: origen, medio, ocupantes | Distancia aproximada × 2 (ida y vuelta) × factor del medio. Auto: 0,48 kgCO₂e/km por vehículo ÷ ocupantes. El promedio de los registrados se extiende al total de asistentes. |
-| Energía | kWh, litros, m³, kg | Cantidad × factor (red 0,40 kgCO₂e/kWh; renovable 0,05; diésel 2,68/L…) |
-| Residuos | kg por destino y material | Vertedero 0,517 · incineración 0,21 · compostaje 0,05 · reciclaje 0,02 kgCO₂e/kg. Emisiones evitadas por reciclaje se informan aparte y no se descuentan. |
-| Catering | kg por tipo de alimento, envases | Cantidad × factor por alimento |
-| Agua | m³ o litros | Red 0,344 kgCO₂e/m³; embotellada 0,244 kgCO₂e/L |
-| Infraestructura y otros | Medición en kgCO₂e | Si no hay medición: 0,75 y 0,2 tCO₂e por cada 1.000 asistentes (marcado "estimado") |
+| Transporte | Registro QR: ciudad de origen, medio, ocupantes, traslado desde el aeropuerto | Ida y vuelta. Distancia en línea recta entre coordenadas de la ciudad de origen y la sede, × 1,3 por carretera o × 1,08 por ruta aérea. Avión: banda doméstica, regional o internacional según distancia, más el traslado aeropuerto–evento (km configurables). El total de los registrados se extiende al total de asistentes. |
+| Alojamiento | Noches declaradas | Noches × factor por noche **definido en el evento, con su fuente**. Sin factor, no se suma. |
+| Energía | kWh, litros, m³, kg | Cantidad × factor. Combustibles = alcance 1; electricidad = alcance 2. |
+| Residuos | kg por destino y material | Emisiones del destino. Las evitadas por reciclaje se informan aparte y no se descuentan. |
+| Catering, agua | kg, unidades, m³, L | Cantidad × factor |
+| Infraestructura y otros | kgCO₂e medidos | Sin medición: 0,75 y 0,2 tCO₂e por cada 1.000 asistentes (marcado "estimado") |
 
 **Asistentes considerados**: los reales (si se cargan en Configuración); si no, el mayor entre registrados y esperados.
 
-**Evento Verde**: máx. 15 kgCO₂e por asistente, mín. 60 % reciclaje/compostaje y mín. 30 % electricidad renovable.
+**Alcances**: el informe separa alcance 1, 2 y 3 desde la perspectiva del organizador (GHG Protocol).
 
-**Alojamiento**: las noches se registran pero no se suman mientras `alojamiento_noche` sea `null` en
-`factores.js` (no hay factor validado en la metodología).
+**Calidad del dato**: porcentaje de la huella medido o declarado, extendido desde las respuestas de asistentes y estimado.
 
-Las distancias por ciudad de origen son aproximadas y suponen un evento en Antofagasta: ajústalas en
-`ORIGENES` si el evento es en otra ciudad. Valida los factores antes de emitir informes oficiales.
+**Evento Verde** (autoevaluación KONTAX Events, no es certificación de tercera parte): máx. 15 kgCO₂e por asistente
+**sin vuelos**, mín. 60 % reciclaje/compostaje y mín. 30 % electricidad renovable.
 
----
+## Cierre del evento e informes
+
+- **Cerrar y emitir informe** congela los datos, los factores y el resultado en un informe numerado
+  (`PR-HE-AAAA-NNNN`) con huella digital SHA-256 del contenido. El registro de asistentes se cierra.
+- Con el evento cerrado no se pueden cambiar datos ni configuración. Cambiar `factores.js` no altera informes emitidos.
+- Un administrador puede **reabrir**: el informe vigente queda como "reemplazado" y al volver a cerrar se emite uno nuevo.
+- La supresión de datos de un asistente sigue permitida con el evento cerrado; el informe solo contiene cifras agregadas.
+- El hash se puede recalcular desde la base con `hashSha256(snapshot)` (`server/src/lib/canonico.js`).
 
 ## Datos personales
 
@@ -125,7 +143,12 @@ Las distancias por ciudad de origen son aproximadas y suponen un evento en Antof
 ## Seguridad
 
 - Contraseñas con bcrypt; sesión en cookie `httpOnly`, `SameSite=Lax` y `Secure` en producción (8 horas).
-- Límite de intentos en el login y en el registro público.
+- Límite de intentos en el login. En el registro público: 5 por correo cada 10 minutos y un tope alto por IP
+  (`LIMITE_REGISTROS_POR_IP`, 600 por minuto), porque en un recinto todos comparten la misma IP del WiFi.
+- En producción el servidor no arranca si `JWT_SECRET` tiene menos de 32 caracteres o `PUBLIC_URL` no es https.
+- Apagado ordenado: al reiniciar termina las peticiones en curso antes de salir.
+- Registro de auditoría (tabla `auditoria`): exportación de asistentes, supresión de datos, emisión y reapertura de
+  informes, eliminación de eventos y cambios de usuarios.
 - Las peticiones que modifican datos deben ser JSON; cabeceras de seguridad con Helmet y CSP.
 - La exportación CSV neutraliza fórmulas para evitar inyección en Excel.
 

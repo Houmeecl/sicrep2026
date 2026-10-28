@@ -17,6 +17,7 @@ operada por Fundación Entretodos (sin fines de lucro). Idioma de la interfaz, e
 
 ```bash
 cd server && npm install && npm test          # pruebas del cálculo
+TEST_DATABASE_URL=postgres://postgres@localhost/pr_test npm test   # + pruebas de API (borra esa base)
 cd server && ADMIN_EMAIL=a@b.cl ADMIN_PASSWORD=clave-local-123 npm run dev   # API :3000
 cd web && npm install && npm run dev          # frontend :5173 (proxy a /api)
 cd web && npm run build                       # verificar que compila
@@ -29,17 +30,23 @@ cd web && npm run build                       # verificar que compila
 ## Decisiones tomadas
 
 - El sello y el pasaporte son de la **empresa**, no de trabajadores: no compiten con las acreditadoras de faena ni con SICEP.
-- Transporte: ida y vuelta desde la ciudad de origen declarada; el promedio de los registrados se extiende al total
-  de asistentes (reales si existen; si no, el mayor entre registrados y esperados).
+- Transporte: ida y vuelta entre coordenadas de la ciudad de origen y la sede (×1,3 carretera, ×1,08 aérea), más
+  traslado aeropuerto–evento para quienes vuelan. Las respuestas se extienden al total de asistentes.
+- Cerrar un evento congela datos, factores y resultado en `informes.snapshot` con número y SHA-256. Nunca recalcular
+  un informe emitido; cambiar factores solo afecta eventos abiertos (subir `METODOLOGIA.version`).
 - Emisiones evitadas por reciclaje se informan aparte, no se descuentan.
-- Alojamiento se registra pero no se suma (`alojamiento_noche: null`) hasta tener un factor validado.
-- Evento Verde: máx. 15 kgCO₂e/asistente, mín. 60 % reciclaje+compostaje, mín. 30 % electricidad renovable.
+- Alojamiento: factor por noche configurable por evento, con fuente obligatoria; sin factor no se suma.
+- Evento Verde (autoevaluación, no certificación): máx. 15 kgCO₂e/asistente SIN vuelos, mín. 60 % reciclaje+compostaje,
+  mín. 30 % electricidad renovable.
 - Membresía única: $120.000/mes por empresa. Preinscripción: pago único $20.000 vía Flow.
 - Paleta: azul petróleo (estructura), cobre (sello e identidad), naranjo solo para acciones.
 
 ## Pendientes (en orden sugerido)
 
 1. Desplegar en el VPS y probar el QR del evento OCDE con celulares reales.
+   Ojo: `.github/workflows/deploy.yml` despliega SICREP al hacer push a main; este proyecto es independiente.
+1b. Contrastar factores con fuente oficial vigente (red eléctrica SEN, vuelos) y definir factor de alojamiento.
+1c. Respaldo adjunto por dato operativo (factura, guía, lectura) con almacenamiento cifrado.
 2. Preinscripción con pago Flow (API de pagos, webhook idempotente, firma HMAC) y KYC con revisión manual.
 3. Pasaporte documental de socios: bóveda cifrada, revisión por la fundación, alertas de vencimiento.
 4. Verificador público del sello (`/verificar/:token`, token firmado, nunca el RUT).
