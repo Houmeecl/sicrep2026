@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
+
+  --color-navy-950: #0b2236;
+  --color-navy-900: #0d2c47;
+  --color-navy-800: #17395a;
+  --color-navy-700: #134b7a;
+  --color-navy-100: #e6eef6;
+  --color-navy-50: #f2f6fa;
+
+  --color-cobre-700: #9a5225;
+  --color-cobre-400: #c98a5b;
+  --color-cobre-200: #f2b48a;
+  --color-cobre-50: #fbf1e8;
+
+  --color-naranjo-500: #ef7d2d;
+  --color-naranjo-600: #e06a17;
+
+  --color-arena-50: #fbf8f3;
+  --color-arena-100: #f5efe6;
+  --color-arena-200: #ebe2d4;
+
+  --color-tinta-600: #4a5a6a;
+  --color-tinta-400: #8a97a5;
+
+  --color-exito-700: #14532d;
+  --color-exito-100: #ddf0e3;
+  --color-alerta-700: #8a4a0c;
+  --color-alerta-100: #fdebd9;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white font-sans text-navy-900 antialiased;
+    font-size: 17px;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-naranjo-500);
+    outline-offset: 2px;
+  }
+}
+
+@utility contenedor {
+  @apply mx-auto w-full max-w-6xl px-5 sm:px-6;
+}
+@utility boton {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-5 font-semibold transition
+    disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility boton-accion {
+  @apply boton bg-naranjo-500 text-navy-950 shadow-sm hover:bg-naranjo-600;
+}
+@utility boton-primario {
+  @apply boton bg-navy-700 text-white hover:bg-navy-900;
+}
+@utility boton-secundario {
+  @apply boton border-2 border-navy-700 bg-white text-navy-700 hover:bg-navy-50;
+}
+@utility boton-fantasma {
+  @apply boton text-navy-700 hover:bg-navy-50;
+}
+@utility campo {
+  @apply min-h-12 w-full rounded-xl border border-tinta-400 bg-white px-3.5 text-base text-navy-900
+    placeholder:text-tinta-400 focus:border-navy-700 focus:outline-none focus:ring-2 focus:ring-navy-700/20;
+}
+@utility etiqueta {
+  @apply mb-1.5 block text-[15px] font-semibold text-navy-900;
+}
+@utility tarjeta {
+  @apply rounded-2xl border border-navy-900/8 bg-white shadow-[0_1px_2px_rgba(13,44,71,0.06)];
+}
+@utility sobretitulo {
+  @apply text-[13px] font-bold uppercase tracking-[0.12em] text-cobre-700;
+}
